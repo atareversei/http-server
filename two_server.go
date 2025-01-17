@@ -46,12 +46,14 @@ func main() {
 	loadData(&contacts)
 
 	s := server.New(port)
-	s.Get("/user", contactHandler)
+	s.Get("/contacts", contactHandler)
 	s.All("/", notFoundHandler)
+	s.Start()
 }
 
 func contactHandler(req http.Request, res *http.Response) {
-
+	res.SetHeader("Content-Type", "text/html")
+	res.Write([]byte("<h1>Hello, world!</h1>"))
 }
 
 func notFoundHandler(req http.Request, res *http.Response) {

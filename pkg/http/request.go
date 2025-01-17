@@ -62,8 +62,15 @@ func (req *Request) parseStartLine(r *bufio.Reader) {
 
 	fullPath := strings.TrimSpace(requestParts[1])
 	queryParamStart := strings.Index(fullPath, "?")
-	path := fullPath[:queryParamStart]
-	queryString := fullPath[queryParamStart+1:]
+	var path string
+	var queryString string
+	if queryParamStart != -1 {
+		path = fullPath[:queryParamStart]
+		queryString = fullPath[queryParamStart+1:]
+	} else {
+		path = fullPath
+		queryString = ""
+	}
 	req.parseQueryParams(queryString)
 	req.path = path
 	req.method = strings.TrimSpace(requestParts[0])

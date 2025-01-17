@@ -33,9 +33,13 @@ func (res *Response) WriteHeader(status StatusCode) {
 }
 
 func (res *Response) Write(data []byte) {
+	if res.statusCode == 0 || res.statusMessage == "" {
+		res.WriteHeader(Ok)
+	}
 	res.body = data
 	res.contentLength = len(data)
 	response := res.generate()
+	fmt.Println(response)
 	res.conn.Write([]byte(response))
 }
 
