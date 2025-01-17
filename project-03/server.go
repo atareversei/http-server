@@ -5,29 +5,19 @@ import (
 	"flag"
 	"fmt"
 	"github.com/atareversei/network-course-projects/pkg/cli"
-	"github.com/atareversei/network-course-projects/pkg/colorize"
 	"net"
 )
 
 func main() {
-	fmt.Printf(
-		"made in %s",
-		colorize.
-			New("basliq labs\n").
-			Modify(colorize.BrightBlue).
-			Commit())
-
+	cli.MadeInBasliqLabs()
 	portFlag := flag.Int("port", 8080, "port number to spawn the server process")
 	flag.Parse()
-
 	port := *portFlag
-
 	cli.Success(fmt.Sprintf("tcp server started at :%d", port))
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		cli.Error("server could not be started", err)
 	}
-
 	for {
 		conn, err := l.Accept()
 		if err != nil {

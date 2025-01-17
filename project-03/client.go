@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"github.com/atareversei/network-course-projects/pkg/cli"
-	"github.com/atareversei/network-course-projects/pkg/colorize"
 	"math/rand"
 	"net"
 	"os"
@@ -14,20 +13,12 @@ import (
 )
 
 func main() {
-	fmt.Printf(
-		"made in %s",
-		colorize.
-			New("basliq labs\n").
-			Modify(colorize.BrightBlue).
-			Commit())
-
+	cli.MadeInBasliqLabs()
 	hostFlag := flag.String("host", "localhost", "Host to dial")
 	portFlag := flag.Int("port", 8080, "Port to dial")
 	flag.Parse()
-
 	host := *hostFlag
 	port := *portFlag
-
 	for {
 		fmt.Println("1. measure performance (1 Byte)\n2. measure performance (1 KB)\n3. measure performance (2 KB)\n4. measure performance (4 KB)\n5. measure performance (8 KB)\n6. measure performance (16 KB)\n7. exit")
 		reader := bufio.NewReader(os.Stdin)

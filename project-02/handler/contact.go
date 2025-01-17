@@ -16,7 +16,6 @@ func (h Handler) Contact(req http.Request, res *http.Response) {
 			contacts = append(contacts, contact)
 		}
 	}
-
 	if code == "" {
 		name, _ := req.Params("name")
 		if name != "" {
@@ -38,18 +37,15 @@ func (h Handler) Contact(req http.Request, res *http.Response) {
 			ctcs := h.repo.ListByEmail(email)
 			contacts = append(contacts, ctcs...)
 		}
-
 		if name == "" && phone == "" && address == "" && email == "" {
 			contacts = h.repo.ListAllContacts()
 		}
 	}
-
 	var builder strings.Builder
 	for _, contact := range contacts {
 		tmpl := fmt.Sprintf("<li>code: %s name: %s phone: %s address: %s email: %s</li>", contact.Code, contact.Name, contact.Phone, contact.Address, contact.Email)
 		builder.WriteString(tmpl)
 	}
-
 	res.SetHeader("Content-Type", "text/html")
 	res.Write([]byte("<ul>" + builder.String() + "</ul>"))
 }

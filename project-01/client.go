@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"github.com/atareversei/network-course-projects/pkg/cli"
-	"github.com/atareversei/network-course-projects/pkg/colorize"
 	"net"
 	"os"
 	"strconv"
@@ -15,33 +14,23 @@ import (
 var clientKeys = make(map[int]int)
 
 func main() {
-	fmt.Printf(
-		"made in %s",
-		colorize.
-			New("basliq labs\n").
-			Modify(colorize.BrightBlue).
-			Commit())
-
+	cli.MadeInBasliqLabs()
 	hostFlag := flag.String("host", "localhost", "Host to dial")
 	portFlag := flag.Int("port", 8080, "Port to dial")
 	flag.Parse()
-
 	host := *hostFlag
 	port := *portFlag
-
-	data, err := os.ReadFile("./one_key.txt")
+	data, err := os.ReadFile("./key.txt")
 	if err != nil {
 		cli.Error("server could not find the keys", err)
 		os.Exit(1)
 	}
-
 	for _, key := range strings.Split(strings.ReplaceAll(string(data), "\r", ""), "\n") {
 		index, err := strconv.Atoi(strings.Trim(strings.Split(key, ":")[0], " "))
 		if err != nil {
 			cli.Error("cannot read key index", err)
 			continue
 		}
-
 		value, err := strconv.Atoi(strings.Trim(strings.Split(key, ":")[1], " "))
 		if err != nil {
 			cli.Error("cannot read key value", err)
@@ -49,7 +38,6 @@ func main() {
 		}
 		clientKeys[index] = value
 	}
-
 	for {
 		fmt.Println("1. dial\n2. exit")
 		reader := bufio.NewReader(os.Stdin)

@@ -9,20 +9,22 @@ import (
 	"strings"
 )
 
-// Request is the object that gets populated when tcp
+// Request is the object that gets populated when TCP
 // connection hits the server.
 type Request struct {
 	// method can be GET and POST.
+	// TODO - implement CONNECT, HEAD, PUT, PATCH, and DELETE
 	method string
 	// path is the resource that the request is trying
-	// to get on the server.
+	// to retrieve from the server.
 	// e.g. www.example.com/user?page=10 -> path: /user
 	path string
 	// version is the HTTP version that the request has
-	// been created with.
+	// been created in.
 	version string
 	// headers holds most of the headers that the request
-	// has, expect headers that have occurred multiple times.
+	// has, except the headers that have occurred multiple times.
+	// TODO - support multiple headers
 	headers map[string]string
 	// body holds the body of the request if it is not GET.
 	body []byte
@@ -30,19 +32,19 @@ type Request struct {
 	// e.g. www.example.com/user?page=10 -> the map holds
 	// a key of page with the value of 10 (string)
 	params map[string]string
-	// conn holds the tcp connection information.
+	// conn holds the TCP connection information.
 	// required for reading the request data.
 	conn net.Conn
 }
 
-// NewRequest creates a new request struct, that can be used
+// NewRequest creates a new request struct that can be used
 // to invoke receiver functions to populate the struct.
 func NewRequest(conn net.Conn) Request {
 	return Request{conn: conn}
 }
 
-// Parse is used to parse a tcp byte stream into
-// HTTP Request struct.
+// Parse is used to parse a TCP byte stream into
+// an HTTP Request struct.
 func (req *Request) Parse() {
 	r := bufio.NewReader(req.conn)
 	req.parseStartLine(r)
@@ -59,7 +61,6 @@ func (req *Request) parseStartLine(r *bufio.Reader) {
 		return
 	}
 	requestParts := strings.Split(request, " ")
-
 	fullPath := strings.TrimSpace(requestParts[1])
 	queryParamStart := strings.Index(fullPath, "?")
 	var path string
@@ -150,22 +151,28 @@ func (req *Request) parseBody(r *bufio.Reader) {
 	req.body = body
 }
 
+// Method returns the method of the request.
 func (req *Request) Method() string {
 	return req.method
 }
 
+// Path returns the path of the request.
 func (req *Request) Path() string {
 	return req.path
 }
 
+// Version returns the version of the request.
 func (req *Request) Version() string {
 	return req.version
 }
 
-func (req *Request) Header() map[string]string {
-	return req.headers
+// Header returns the headers of the request.
+func (req *Request) Header(key string) (string, bool) {
+	h, ok := req.headers[key]
+	return h, ok
 }
 
+// Params returns the query parameters of a request.
 func (req *Request) Params(key string) (string, bool) {
 	v, ok := req.params[key]
 	return v, ok

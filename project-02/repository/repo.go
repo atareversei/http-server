@@ -26,7 +26,6 @@ func loadData(contacts *[]entity.Contact) {
 		cli.Error("server could not find the data file", err)
 		os.Exit(1)
 	}
-
 	for _, record := range strings.Split(strings.ReplaceAll(string(data), "\r", ""), "\n") {
 		contactInfo := strings.Split(record, ",")
 		var contact entity.Contact
@@ -35,7 +34,6 @@ func loadData(contacts *[]entity.Contact) {
 		contact.Phone = contactInfo[2]
 		contact.Address = contactInfo[3]
 		contact.Email = contactInfo[4]
-
 		*contacts = append(*contacts, contact)
 	}
 }

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"github.com/atareversei/network-course-projects/pkg/colorize"
 	"log"
 )
@@ -11,6 +12,15 @@ const (
 	infoPrefix    = "INFO"
 	successPrefix = "SUCCESS"
 )
+
+func MadeInBasliqLabs() {
+	fmt.Printf(
+		"made in %s",
+		colorize.
+			New("basliq labs\n").
+			Modify(colorize.BrightBlue).
+			Commit())
+}
 
 func Print(message string) {
 	log.Printf("%s", message)
