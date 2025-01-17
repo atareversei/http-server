@@ -39,7 +39,6 @@ func (res *Response) Write(data []byte) {
 	res.body = data
 	res.contentLength = len(data)
 	response := res.generate()
-	fmt.Println(response)
 	res.conn.Write([]byte(response))
 }
 

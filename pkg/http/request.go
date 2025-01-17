@@ -99,6 +99,7 @@ func (req *Request) parseQueryParams(qs string) {
 			qp[queryParts[0]] = queryParts[1]
 		}
 	}
+	req.params = qp
 }
 
 // parseHeaders parses the headers of an HTTP request.
@@ -165,6 +166,7 @@ func (req *Request) Header() map[string]string {
 	return req.headers
 }
 
-func (req *Request) Params() map[string]string {
-	return req.params
+func (req *Request) Params(key string) (string, bool) {
+	v, ok := req.params[key]
+	return v, ok
 }

@@ -67,6 +67,7 @@ func (s *Server) parseHTTP(conn net.Conn) {
 }
 
 func (s *Server) handleRequest(request http.Request, response *http.Response) {
+	cli.Info(fmt.Sprintf("%s %s", request.Method(), request.Path()))
 	// TODO - enhance type checking
 	// simple check to see if the request points to a file
 	if strings.Contains(request.Path(), ".") {
@@ -98,7 +99,6 @@ func (s *Server) handleRequest(request http.Request, response *http.Response) {
 			}
 		}
 	} else {
-		fmt.Println(request.Path())
 		resource, resOk := s.router[request.Path()]
 		if !resOk {
 			// TODO - add proper response
