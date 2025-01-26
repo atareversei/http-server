@@ -92,6 +92,8 @@ func MeasurePerformance(host string, port int, n int) {
 		sum += t.Microseconds()
 	}
 	avg := sum / 1000
-	tp := (int64(n) * 8) / (sum / 100000)
-	cli.Info(fmt.Sprintf("Measuring finished.\n\t\t\tAverage Time (microseconds): %d\n\t\t\tThroughput (bits/seconds): %d", avg, tp))
+	avgSec := avg
+	avgBit := int64(n) * 8 * 1000000
+	tp := avgBit / avgSec
+	cli.Info(fmt.Sprintf("Measuring finished\n\t\t\tNumber of bits in a message: %d\n\t\t\tAverage Time (microseconds): %d\n\t\t\tThroughput (bits/seconds): %d", int64(n)*8, avg, tp))
 }

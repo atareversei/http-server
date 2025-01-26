@@ -38,7 +38,7 @@ func handleConnection(conn net.Conn) {
 			cli.Info(fmt.Sprintf("client (%s) closed the connection", conn.RemoteAddr()))
 			break
 		}
-		cli.Info(fmt.Sprintf("recieved message: %s", message))
+		go cli.Info(fmt.Sprintf("recieved message: %s", message[:len(message)-1]))
 		conn.Write(message)
 	}
 }

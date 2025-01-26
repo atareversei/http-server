@@ -50,7 +50,7 @@ func (r *Repo) FindByCode(code string) (entity.Contact, error) {
 func (r *Repo) ListByName(name string) []entity.Contact {
 	ctcs := make([]entity.Contact, 0)
 	for _, contact := range r.contacts {
-		if strings.Contains(contact.Name, name) {
+		if strings.Contains(strings.ToLower(contact.Name), name) {
 			ctcs = append(ctcs, contact)
 		}
 	}
@@ -70,7 +70,7 @@ func (r *Repo) ListByPhone(phone string) []entity.Contact {
 func (r *Repo) ListByAddress(address string) []entity.Contact {
 	ctcs := make([]entity.Contact, 0)
 	for _, contact := range r.contacts {
-		if strings.Contains(contact.Address, address) {
+		if strings.Contains(strings.ToLower(contact.Address), address) {
 			ctcs = append(ctcs, contact)
 		}
 	}
@@ -80,7 +80,7 @@ func (r *Repo) ListByAddress(address string) []entity.Contact {
 func (r *Repo) ListByEmail(email string) []entity.Contact {
 	ctcs := make([]entity.Contact, 0)
 	for _, contact := range r.contacts {
-		if strings.Contains(contact.Email, email) {
+		if strings.Contains(strings.ToLower(contact.Email), email) {
 			ctcs = append(ctcs, contact)
 		}
 	}

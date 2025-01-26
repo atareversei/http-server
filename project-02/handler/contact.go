@@ -12,7 +12,7 @@ func (h Handler) Contact(req http.Request, res *http.Response) {
 	code, _ := req.Params("code")
 	if code != "" {
 		contact, err := h.repo.FindByCode(code)
-		if err != nil {
+		if err == nil {
 			contacts = append(contacts, contact)
 		}
 	}
@@ -47,5 +47,11 @@ func (h Handler) Contact(req http.Request, res *http.Response) {
 		builder.WriteString(tmpl)
 	}
 	res.SetHeader("Content-Type", "text/html")
-	res.Write([]byte("<ul>" + builder.String() + "</ul>"))
+
+	if len(contacts) == 0 {
+		res.Write([]byte("<b>no contact found!</b>"))
+	} else {
+		res.Write([]byte("<ul>" + builder.String() + "</ul>"))
+	}
+
 }
