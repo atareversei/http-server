@@ -3,10 +3,11 @@ package http
 import (
 	"bufio"
 	"fmt"
-	"github.com/atareversei/network-course-projects/pkg/cli"
 	"net"
 	"strconv"
 	"strings"
+
+	"github.com/atareversei/http-server/internal/cli"
 )
 
 // Request is the object that gets populated when TCP

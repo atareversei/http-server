@@ -2,12 +2,13 @@ package server
 
 import (
 	"fmt"
-	"github.com/atareversei/network-course-projects/pkg/cli"
-	"github.com/atareversei/network-course-projects/pkg/http"
 	"io"
 	"net"
 	"os"
 	"strings"
+
+	"github.com/atareversei/http-server/http"
+	"github.com/atareversei/http-server/internal/cli"
 )
 
 // Server is used to spawn an HTTP server.

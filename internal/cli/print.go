@@ -2,8 +2,9 @@ package cli
 
 import (
 	"fmt"
-	"github.com/atareversei/network-course-projects/pkg/colorize"
 	"log"
+
+	"github.com/atareversei/http-server/internal/colorize"
 )
 
 const (

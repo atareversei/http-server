@@ -1,3 +1,3 @@
-module github.com/atareversei/network-course-projects
+module github.com/atareversei/http-server
 
 go 1.23.0
