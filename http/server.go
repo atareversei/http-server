@@ -5,7 +5,6 @@ import (
 	"io"
 	"mime"
 	"net"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,6 +12,13 @@ import (
 
 	"github.com/atareversei/http-server/internal/cli"
 )
+
+type Logger interface {
+	Success(msg string)
+	Info(msg string)
+	Warning(msg string)
+	Error(msg string, err error)
+}
 
 type noOpLogger struct{}
 
@@ -31,26 +37,106 @@ type Server struct {
 	// TLSCertFile string
 	// TLSKeyFile	 sting
 
-	LoggingEnabled bool
+	loggingEnabled bool
+	previousLogger Logger
 	Logger         Logger
 
 	// httpServer      *http.Server
 	shutdownTimeout time.Duration
 }
 
+func (s *Server) DisableLogging() {
+	s.previousLogger = s.Logger
+	s.Logger = &noOpLogger{}
+	s.loggingEnabled = false
+}
+
+func (s *Server) EnableLogging() {
+	s.Logger = s.previousLogger
+	s.loggingEnabled = true
+}
+
 type Router interface {
-	Register(method string, path string, handler http.HandlerFunc)
-	ServerHTTP()
+	Register(method string, path string, handler Handler)
+	Handler
 }
 
-type Middleware func(http.Handler) http.Handler
-
-type Logger interface {
-	Success(msg string)
-	Info(msg string)
-	Warning(msg string)
-	Error(msg string, err error)
+type Handler interface {
+	ServeHTTP(req Request, res Response)
 }
+
+type DefaultRouter struct {
+	routes map[string]map[string]Handler
+	logger Logger
+}
+
+func (s *Server) NewRouter() DefaultRouter {
+	return DefaultRouter{
+		routes: make(map[string]map[string]Handler),
+		logger: s.Logger,
+	}
+}
+
+func (dr *DefaultRouter) Register(method string, path string, handler Handler) {
+	m := strings.ToUpper(method)
+	switch m {
+	case "GET":
+		dr.Get(path, handler)
+	case "POST":
+		dr.Post(path, handler)
+	default:
+		dr.logger.Warning("Unknown method: handler wasn't registered")
+	}
+}
+
+func (dr *DefaultRouter) All(path string, handler Handler) {
+	dr.checkResourceEntry(path)
+	dr.routes[path]["*"] = handler
+}
+
+func (dr *DefaultRouter) Get(path string, handler Handler) {
+	dr.checkResourceEntry(path)
+	dr.routes[path]["GET"] = handler
+}
+
+func (dr *DefaultRouter) Post(path string, handler Handler) {
+	dr.checkResourceEntry(path)
+	dr.routes[path]["POST"] = handler
+}
+
+// checkResourceEntry is used to initialize the inner map of a router
+// if it has not yet been initialized.
+func (dr *DefaultRouter) checkResourceEntry(path string) {
+	_, ok := dr.routes[path]
+	if !ok {
+		dr.routes[path] = make(map[string]Handler)
+	}
+}
+
+func (dr *DefaultRouter) ServeHTTP(req Request, res Response) {
+	resource, resOk := dr.routes[req.Path()]
+	if !resOk {
+		res.WriteHeader(StatusNotFound)
+		res.SetHeader("Content-Type", "text/html")
+		res.Write([]byte("<h1>404 Not Found</h1>"))
+		return
+	}
+	handler, handlerOk := resource[strings.ToUpper(req.Method())]
+	if !handlerOk {
+		catchAll, allOk := resource["*"]
+		if allOk {
+			catchAll.ServeHTTP(req, res)
+			return
+		}
+		res.WriteHeader(StatusMethodNotAllowed)
+		res.SetHeader("Content-Type", "text/html")
+		res.Write([]byte("<h1>405 Method Not Allowed</h1>"))
+		return
+	}
+	handler.ServeHTTP(req, res)
+}
+
+type Middleware func(Handler) Handler
 
 func New(port int, router Router) Server {
 	return Server{
@@ -84,12 +170,12 @@ func (s *Server) handleConnection(conn net.Conn) {
 	request := newRequestFromTCPConn(conn)
 	request.Parse()
 	response := newResponse(conn, request.Version())
-	s.handleRequest(request, &response)
+	s.handleRequest(request, response)
 	// TODO: check for errors
 	conn.Close()
 }
 
-func (s *Server) handleRequest(request Request, response *Response) {
+func (s *Server) handleRequest(request Request, response Response) {
 	s.Logger.Info(fmt.Sprintf("%s %s", request.Method(), request.Path()))
 
 	for prefix, _ := range s.Static {
@@ -102,7 +188,7 @@ func (s *Server) handleRequest(request Request, response *Response) {
 	s.handleHttpRequest(request, response)
 }
 
-func (s *Server) handleFileRequest(prefix string, request Request, response *Response) {
+func (s *Server) handleFileRequest(prefix string, request Request, response Response) {
 	i := strings.Index(request.Path(), prefix)
 	filePath := request.Path()[i+len(prefix):]
 	fullPath := s.Static[prefix] + filePath
@@ -145,23 +231,6 @@ func (s *Server) handleFileRequest(prefix string, request Request, response *Res
 	}
 }
 
-func (s *Server) handleHttpRequest(request Request, response *Response) {
-	resource, resOk := s.Router.mapper[request.Path()]
-	if !resOk {
-		// TODO - add proper response
-		response.WriteHeader(StatusNotFound)
-		return
-	}
-	handler, handlerOk := resource[strings.ToUpper(request.Method())]
-	if !handlerOk {
-		catchAll, allOk := resource["ALL"]
-		if allOk {
-			catchAll(request, response)
-			return
-		}
-		// TODO - add proper response
-		response.WriteHeader(StatusMethodNotAllowed)
-		return
-	}
-	handler(request, response)
+func (s *Server) handleHttpRequest(request Request, response Response) {
+	s.Router.ServeHTTP(request, response)
 }
