@@ -5,26 +5,29 @@ import "errors"
 type StatusCode int
 
 const (
-	Ok               StatusCode = 200
-	NotFound         StatusCode = 404
-	MethodNotAllowed StatusCode = 405
+	StatusOk                  StatusCode = 200
+	StatusNotFound            StatusCode = 404
+	StatusMethodNotAllowed    StatusCode = 405
+	StatusInternalServerError StatusCode = 500
 )
 
 const (
 	okMessage               = "OK"
 	notFoundMessage         = "Not Found"
 	methodNotAllowedMessage = "Method Not Allowed"
+	internalServerError     = "Internal Server Error"
 )
 
 func (s StatusCode) String() string {
 	switch s {
-	case Ok:
+	case StatusOk:
 		return okMessage
-	case NotFound:
+	case StatusNotFound:
 		return notFoundMessage
-	case MethodNotAllowed:
+	case StatusMethodNotAllowed:
 		return methodNotAllowedMessage
-	// This should never happen
+	case StatusInternalServerError:
+		return internalServerError
 	default:
 		return ""
 

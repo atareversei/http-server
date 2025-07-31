@@ -38,9 +38,9 @@ type Request struct {
 	conn net.Conn
 }
 
-// NewRequest creates a new request struct that can be used
+// newRequestFromTCPConn creates a new request struct that can be used
 // to invoke receiver functions to populate the struct.
-func NewRequest(conn net.Conn) Request {
+func newRequestFromTCPConn(conn net.Conn) Request {
 	return Request{conn: conn}
 }
 

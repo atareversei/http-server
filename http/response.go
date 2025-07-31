@@ -32,9 +32,9 @@ type Response struct {
 	conn net.Conn
 }
 
-// NewResponse creates a new response struct that has
+// newResponse creates a new response struct that has
 // useful receiver functions.
-func NewResponse(conn net.Conn, version string) Response {
+func newResponse(conn net.Conn, version string) Response {
 	return Response{
 		server:  "basliq labs",
 		headers: make(map[string]string),
@@ -53,7 +53,7 @@ func (res *Response) WriteHeader(status StatusCode) {
 // that will be written in body.
 func (res *Response) Write(data []byte) {
 	if res.statusCode == 0 || res.statusMessage == "" {
-		res.WriteHeader(Ok)
+		res.WriteHeader(StatusOk)
 	}
 	res.body = data
 	res.contentLength = len(data)
