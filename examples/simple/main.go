@@ -3,6 +3,6 @@ package main
 import "github.com/atareversei/http-server/http"
 
 func main() {
-	server := http.Server{Port: 9012}
+	server := http.New(9012, nil)
 	server.Start()
 }

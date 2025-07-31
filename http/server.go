@@ -13,6 +13,22 @@ import (
 	"github.com/atareversei/http-server/internal/cli"
 )
 
+// DefaultLogger provides a basic implementation of the Logger interface using the cli package.
+type DefaultLogger struct{}
+
+func (dl *DefaultLogger) Success(msg string) {
+	cli.Success(msg)
+}
+func (dl *DefaultLogger) Info(msg string) {
+	cli.Info(msg)
+}
+func (dl *DefaultLogger) Warning(msg string) {
+	cli.Warning(msg)
+}
+func (dl *DefaultLogger) Error(msg string, err error) {
+	cli.Error(msg, err)
+}
+
 // Logger defines the interface for logging messages at various levels.
 type Logger interface {
 	Success(msg string)
@@ -175,6 +191,7 @@ func New(port int, router Router) Server {
 	return Server{
 		Port:   port,
 		Router: router,
+		Logger: &DefaultLogger{},
 	}
 }
 
