@@ -168,6 +168,16 @@ func (dr *DefaultRouter) ServeHTTP(req Request, res Response) {
 		res.Write([]byte("<h1>404 Not Found</h1>"))
 		return
 	}
+	if req.Method() == MethodOptions {
+		handler, handlerOk := resource[MethodGet]
+		if !handlerOk {
+			res.WriteHeader(StatusNotFound)
+			res.SetHeader("Content-Type", "text/html")
+			res.Write([]byte("<h1>404 Not Found</h1>"))
+			return
+		}
+		handler.ServeHTTP(req, res)
+	}
 	handler, handlerOk := resource[req.Method()]
 	if !handlerOk {
 		catchAll, allOk := resource["*"]
@@ -222,7 +232,7 @@ func (s *Server) FileHandler(pattern string, directory string) {
 func (s *Server) handleConnection(conn net.Conn) {
 	request := newRequestFromTCPConn(conn, s.Logger)
 	err := request.Parse()
-	response := newResponse(conn, request.Version())
+	response := newResponse(conn, request.Version(), request.Method())
 	if err != nil {
 		response.WriteHeader(StatusBadRequest)
 		response.SetHeader("Content-Type", "text/html")
@@ -230,7 +240,6 @@ func (s *Server) handleConnection(conn net.Conn) {
 		response.Write([]byte(fmt.Sprintf("<p>Digest: %s</p>", err)))
 	}
 	s.handleRequest(request, response)
-	// TODO: check for errors
 	conn.Close()
 }
 

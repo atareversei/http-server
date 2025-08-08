@@ -22,7 +22,7 @@ type Request struct {
 	path string
 	// version is the HTTP version that the request has
 	// been created in.
-	version string
+	version Version
 	// headers holds most of the headers that the request
 	// has, except the headers that have occurred multiple times.
 	// TODO - support multiple headers
@@ -86,8 +86,13 @@ func (req *Request) parseStartLine(r *bufio.Reader) error {
 	}
 	req.parseQueryParams(queryString)
 	req.path = path
-	
-	req.version = strings.TrimSpace(requestParts[2])
+
+	version, err := IsVersionValid(strings.TrimSpace(requestParts[2]))
+	if err != nil {
+		req.logger.Error("failed to read the request", err)
+		return err
+	}
+	req.version = version
 	return nil
 }
 
@@ -175,7 +180,7 @@ func (req *Request) Path() string {
 }
 
 // Version returns the version of the request.
-func (req *Request) Version() string {
+func (req *Request) Version() Version {
 	return req.version
 }
 

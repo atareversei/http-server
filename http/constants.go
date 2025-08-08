@@ -41,7 +41,7 @@ func (s StatusCode) String() string {
 	}
 }
 
-var MalformedBodyError = errors.New("body couldn't be parsed")
+var ErrMalformedBody = errors.New("body couldn't be parsed")
 
 type Method string
 
@@ -57,8 +57,8 @@ const (
 	MethodTrace   Method = "TRACE"
 )
 
-func IsMethodValid(s string) (Method, error) {
-	switch s {
+func IsMethodValid(m string) (Method, error) {
+	switch m {
 	case "GET":
 		return MethodGet, nil
 	case "HEAD":
@@ -78,8 +78,12 @@ func IsMethodValid(s string) (Method, error) {
 	case "TRACE":
 		return MethodTrace, nil
 	default:
-		return "", fmt.Errorf("unsupported method %q", s)
+		return "", fmt.Errorf("unsupported method %q", m)
 	}
+}
+
+func (m Method) String() string {
+	return string(m)
 }
 
 type Version string
@@ -98,4 +102,8 @@ func IsVersionValid(v string) (Version, error) {
 	default:
 		return "", fmt.Errorf("unsupported version %q", v)
 	}
+}
+
+func (v Version) String() string {
+	return string(v)
 }

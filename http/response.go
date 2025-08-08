@@ -10,9 +10,10 @@ import (
 // Response is the struct that gets populated during the
 // response phase when a TCP request hits the server.
 type Response struct {
+	method Method
 	// version is the HTTP version that the request has
 	// been created in.
-	version string
+	version Version
 	// statusCode is of HTTP response codes.
 	statusCode int
 	// statusMessage if of HTTP response messages.
@@ -34,11 +35,12 @@ type Response struct {
 
 // newResponse creates a new response struct that has
 // useful receiver functions.
-func newResponse(conn net.Conn, version string) Response {
+func newResponse(conn net.Conn, version Version, method Method) Response {
 	return Response{
 		server:  "basliq labs",
 		headers: make(map[string]string),
 		version: version,
+		method:  method,
 		conn:    conn,
 	}
 }
@@ -80,6 +82,9 @@ func (res *Response) generate() string {
 		builder.WriteString(fmt.Sprintf("%s: %s\r\n", k, v))
 	}
 	builder.WriteString(fmt.Sprintf("Date: %s\r\n", time.Now().Format(time.RFC1123)))
+	if res.method != MethodOptions {
+		return builder.String()
+	}
 	builder.WriteString(fmt.Sprintf("\r\n%s", res.body))
 	return builder.String()
 }
