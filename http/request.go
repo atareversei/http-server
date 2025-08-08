@@ -15,7 +15,7 @@ import (
 type Request struct {
 	// method can be GET and POST.
 	// TODO - implement CONNECT, HEAD, PUT, PATCH, and DELETE
-	method string
+	method Method
 	// path is the resource that the request is trying
 	// to retrieve from the server.
 	// e.g. www.example.com/user?page=10 -> path: /user
@@ -36,32 +36,43 @@ type Request struct {
 	// conn holds the TCP connection information.
 	// required for reading the request data.
 	conn net.Conn
+
+	logger Logger
 }
 
 // newRequestFromTCPConn creates a new request struct that can be used
 // to invoke receiver functions to populate the struct.
-func newRequestFromTCPConn(conn net.Conn) Request {
-	return Request{conn: conn}
+func newRequestFromTCPConn(conn net.Conn, logger Logger) Request {
+	return Request{conn: conn, logger: logger}
 }
 
 // Parse is used to parse a TCP byte stream into
 // an HTTP Request struct.
-func (req *Request) Parse() {
+func (req *Request) Parse() error {
 	r := bufio.NewReader(req.conn)
 	req.parseStartLine(r)
 	req.parseHeaders(r)
 	req.parseBody(r)
+	return nil
 }
 
 // parseStartLine parses the very first line of an HTTP request.
 // e.g. GET /users?page=10 HTTP/1.1
-func (req *Request) parseStartLine(r *bufio.Reader) {
+func (req *Request) parseStartLine(r *bufio.Reader) error {
 	request, err := r.ReadString('\n')
 	if err != nil {
-		cli.Error("failed to read the request", err)
-		return
+		req.logger.Error("failed to read the request", err)
+		return err
 	}
 	requestParts := strings.Split(request, " ")
+
+	method, err := IsMethodValid(strings.TrimSpace(requestParts[0]))
+	if err != nil {
+		req.logger.Error("failed to read the request", err)
+		return err
+	}
+	req.method = method
+
 	fullPath := strings.TrimSpace(requestParts[1])
 	queryParamStart := strings.Index(fullPath, "?")
 	var path string
@@ -75,8 +86,9 @@ func (req *Request) parseStartLine(r *bufio.Reader) {
 	}
 	req.parseQueryParams(queryString)
 	req.path = path
-	req.method = strings.TrimSpace(requestParts[0])
+	
 	req.version = strings.TrimSpace(requestParts[2])
+	return nil
 }
 
 // parseQueryParams parses the query string of an HTTP request.
@@ -153,7 +165,7 @@ func (req *Request) parseBody(r *bufio.Reader) {
 }
 
 // Method returns the method of the request.
-func (req *Request) Method() string {
+func (req *Request) Method() Method {
 	return req.method
 }
 

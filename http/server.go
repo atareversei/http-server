@@ -108,14 +108,14 @@ type Handler interface {
 
 // DefaultRouter provides a basic implementation of the Router interface.
 type DefaultRouter struct {
-	routes map[string]map[string]Handler
+	routes map[string]map[Method]Handler
 	logger Logger
 }
 
 // NewRouter creates and returns a new DefaultRouter with initialized route map and logger.
 func (s *Server) NewRouter() DefaultRouter {
 	return DefaultRouter{
-		routes: make(map[string]map[string]Handler),
+		routes: make(map[string]map[Method]Handler),
 		logger: s.Logger,
 	}
 }
@@ -155,7 +155,7 @@ func (dr *DefaultRouter) Post(path string, handler Handler) {
 func (dr *DefaultRouter) checkResourceEntry(path string) {
 	_, ok := dr.routes[path]
 	if !ok {
-		dr.routes[path] = make(map[string]Handler)
+		dr.routes[path] = make(map[Method]Handler)
 	}
 }
 
@@ -168,7 +168,7 @@ func (dr *DefaultRouter) ServeHTTP(req Request, res Response) {
 		res.Write([]byte("<h1>404 Not Found</h1>"))
 		return
 	}
-	handler, handlerOk := resource[strings.ToUpper(req.Method())]
+	handler, handlerOk := resource[req.Method()]
 	if !handlerOk {
 		catchAll, allOk := resource["*"]
 		if allOk {
@@ -220,9 +220,15 @@ func (s *Server) FileHandler(pattern string, directory string) {
 
 // handleConnection reads an HTTP request from a raw TCP connection and dispatches it.
 func (s *Server) handleConnection(conn net.Conn) {
-	request := newRequestFromTCPConn(conn)
-	request.Parse()
+	request := newRequestFromTCPConn(conn, s.Logger)
+	err := request.Parse()
 	response := newResponse(conn, request.Version())
+	if err != nil {
+		response.WriteHeader(StatusBadRequest)
+		response.SetHeader("Content-Type", "text/html")
+		response.Write([]byte("<h1>400 Bad Request</h1>"))
+		response.Write([]byte(fmt.Sprintf("<p>Digest: %s</p>", err)))
+	}
 	s.handleRequest(request, response)
 	// TODO: check for errors
 	conn.Close()
