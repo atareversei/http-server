@@ -82,7 +82,7 @@ func (res *Response) generate() string {
 		builder.WriteString(fmt.Sprintf("%s: %s\r\n", k, v))
 	}
 	builder.WriteString(fmt.Sprintf("Date: %s\r\n", time.Now().Format(time.RFC1123)))
-	if res.method != MethodOptions {
+	if res.method != MethodHead {
 		return builder.String()
 	}
 	builder.WriteString(fmt.Sprintf("\r\n%s", res.body))

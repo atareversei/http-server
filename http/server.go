@@ -76,7 +76,7 @@ type Server struct {
 	// Logger is the active logger for server messages.
 	Logger Logger
 
-	// httpServer      *http.Server
+	CorsConfig CORSConfig
 
 	// shutdownTimeout would define how long to wait during graceful shutdown.
 	shutdownTimeout time.Duration
@@ -93,6 +93,13 @@ func (s *Server) DisableLogging() {
 func (s *Server) EnableLogging() {
 	s.Logger = s.previousLogger
 	s.loggingEnabled = true
+}
+
+type CORSConfig struct {
+	AllowedOrigins   []string
+	AllowedMethods   []Method
+	AllowedHeaders   []string
+	AllowCredentials bool
 }
 
 // Router is the interface for registering and handling HTTP routes.
@@ -142,13 +149,31 @@ func (dr *DefaultRouter) All(path string, handler Handler) {
 // Get registers a handler for HTTP GET requests on the given path.
 func (dr *DefaultRouter) Get(path string, handler Handler) {
 	dr.checkResourceEntry(path)
-	dr.routes[path]["GET"] = handler
+	dr.routes[path][MethodGet] = handler
 }
 
 // Post registers a handler for HTTP POST requests on the given path.
 func (dr *DefaultRouter) Post(path string, handler Handler) {
 	dr.checkResourceEntry(path)
-	dr.routes[path]["POST"] = handler
+	dr.routes[path][MethodPost] = handler
+}
+
+// Post registers a handler for HTTP Patch requests on the given path.
+func (dr *DefaultRouter) Patch(path string, handler Handler) {
+	dr.checkResourceEntry(path)
+	dr.routes[path][MethodPatch] = handler
+}
+
+// Post registers a handler for HTTP Put requests on the given path.
+func (dr *DefaultRouter) Put(path string, handler Handler) {
+	dr.checkResourceEntry(path)
+	dr.routes[path][MethodPut] = handler
+}
+
+// Post registers a handler for HTTP Delete requests on the given path.
+func (dr *DefaultRouter) Delete(path string, handler Handler) {
+	dr.checkResourceEntry(path)
+	dr.routes[path][MethodDelete] = handler
 }
 
 // checkResourceEntry ensures the inner map for a path exists before assigning a method handler.
@@ -168,7 +193,8 @@ func (dr *DefaultRouter) ServeHTTP(req Request, res Response) {
 		res.Write([]byte("<h1>404 Not Found</h1>"))
 		return
 	}
-	if req.Method() == MethodOptions {
+	
+	if req.Method() == MethodHead {
 		handler, handlerOk := resource[MethodGet]
 		if !handlerOk {
 			res.WriteHeader(StatusNotFound)
@@ -178,6 +204,9 @@ func (dr *DefaultRouter) ServeHTTP(req Request, res Response) {
 		}
 		handler.ServeHTTP(req, res)
 	}
+
+	// TODO: handle OPTIONS
+
 	handler, handlerOk := resource[req.Method()]
 	if !handlerOk {
 		catchAll, allOk := resource["*"]
@@ -202,6 +231,10 @@ func New(port int, router Router) Server {
 		Port:   port,
 		Router: router,
 		Logger: &DefaultLogger{},
+		CorsConfig: CORSConfig{
+			AllowedMethods: []Method{MethodGet, MethodHead, MethodOptions},
+			AllowedHeaders: []string{"Content-Type"},
+		},
 	}
 }
 
