@@ -195,3 +195,17 @@ func (req *Request) Params(key string) (string, bool) {
 	v, ok := req.params[key]
 	return v, ok
 }
+
+// handleRequest routes a request to either file serving or HTTP handling logic.
+func (s *Server) handleRequest(request Request, response Response) {
+	s.Logger.Info(fmt.Sprintf("%s %s", request.Method(), request.Path()))
+
+	for prefix, _ := range s.Static {
+		if strings.Contains(request.Path(), prefix) {
+			s.handleFileRequest(prefix, request, response)
+			return
+		}
+	}
+
+	s.handleHttpRequest(request, response)
+}
