@@ -1,6 +1,11 @@
 package http
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
+
+var ErrMalformedBody = errors.New("body couldn't be parsed")
 
 func HTTPError(res Response, status StatusCode) {
 	HTTPErrorWithMessage(res, status, status.String(), "")

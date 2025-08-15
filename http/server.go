@@ -68,15 +68,13 @@ func (dr *DefaultRouter) ServeHTTP(req Request, res Response) {
 	}
 
 	if req.Method() == MethodHead {
-		handler, handlerOk := resource[MethodGet]
-		if !handlerOk {
-			HTTPError(res, StatusNotFound)
-			return
-		}
-		handler.ServeHTTP(req, res)
+		handleHeadMethod(req, res, resource)
+		return
 	}
 
 	if req.Method() == MethodOptions {
+		handlerOptionsMethod(req, res, resource)
+		return
 	}
 
 	handler, handlerOk := resource[req.Method()]
