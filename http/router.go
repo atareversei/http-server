@@ -12,14 +12,18 @@ type Router interface {
 type DefaultRouter struct {
 	routes map[string]map[Method]Handler
 	logger Logger
+	cors   CORSConfig
 }
 
 // NewRouter creates and returns a new DefaultRouter with initialized route map and logger.
-func (s *Server) NewRouter() DefaultRouter {
-	return DefaultRouter{
+func (s *Server) NewRouter() *DefaultRouter {
+	router := &DefaultRouter{
 		routes: make(map[string]map[Method]Handler),
 		logger: s.Logger,
+		cors:   s.CorsConfig,
 	}
+	s.Router = router
+	return router
 }
 
 // Register adds a handler and maps it to an HTTP method and a path.
@@ -85,4 +89,24 @@ func (dr *DefaultRouter) checkResourceEntry(path string) {
 	if !ok {
 		dr.routes[path] = make(map[Method]Handler)
 	}
+}
+
+var availableMethods = make([]Method, 0)
+var availableMethodsPopulated = false
+
+func (dr *DefaultRouter) getAllAvailableMethods() []Method {
+	if !availableMethodsPopulated {
+		var methods = make(map[Method]bool)
+		for p, _ := range dr.routes {
+			for m, _ := range dr.routes[p] {
+				methods[m] = true
+			}
+		}
+
+		for m, _ := range methods {
+			availableMethods = append(availableMethods, m)
+		}
+	}
+
+	return availableMethods
 }

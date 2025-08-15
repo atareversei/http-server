@@ -45,14 +45,15 @@ type Server struct {
 }
 
 // New creates and returns a new Server with the specified port and router.
-func New(port int, router Router) Server {
+func New(port int) Server {
 	return Server{
 		Port:   port,
-		Router: router,
 		Logger: &DefaultLogger{},
 		CorsConfig: CORSConfig{
+			AllowedOrigins: []string{"*"},
 			AllowedMethods: []Method{MethodGet, MethodHead, MethodOptions},
 			AllowedHeaders: []string{"Content-Type"},
+			AllowedMaxAge:  86400,
 		},
 	}
 }
@@ -73,7 +74,7 @@ func (dr *DefaultRouter) ServeHTTP(req Request, res Response) {
 	}
 
 	if req.Method() == MethodOptions {
-		handlerOptionsMethod(req, res, resource)
+		handlerOptionsMethod(req, res, dr, resource)
 		return
 	}
 
