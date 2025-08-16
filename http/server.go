@@ -61,7 +61,9 @@ func New(port int) Server {
 // ServeHTTP handles incoming HTTP requests by dispatching to the appropriate route handler.
 func (dr *DefaultRouter) ServeHTTP(req Request, res Response) {
 	resource, resOk := dr.routes[req.Path()]
-	if !resOk {
+	if !resOk &&
+		!(req.Method() == MethodOptions && req.Path() == "*") &&
+		!(req.Method() == MethodConnect) {
 		res.WriteHeader(StatusNotFound)
 		res.SetHeader("Content-Type", "text/html")
 		res.Write([]byte("<h1>404 Not Found</h1>"))

@@ -60,13 +60,38 @@ func handleHeadMethod(req Request, res Response, resource map[Method]Handler) {
 
 func handlerOptionsMethod(req Request, res Response, router *DefaultRouter, resource map[Method]Handler) {
 	if req.Path() == "*" {
-		handleGeneralOptionsMethod(req, res, router)
+		handleGeneralOptionsMethod(res, router)
 		return
 	}
+
+	handleSpecificOptionsMethod(res, router, resource)
 }
 
-func handleGeneralOptionsMethod(req Request, res Response, router *DefaultRouter) {
+func handleGeneralOptionsMethod(res Response, router *DefaultRouter) {
 	methods := router.getAllAvailableMethods()
+	mtdStrArr := make([]string, len(methods))
+	for i, m := range methods {
+		mtdStrArr[i] = m.String()
+	}
+	corsMtdStrArr := make([]string, len(router.cors.AllowedMethods))
+	for i, m := range router.cors.AllowedMethods {
+		corsMtdStrArr[i] = m.String()
+	}
+
+	res.WriteHeader(StatusOk)
+	res.SetHeader("Allow", strings.Join(mtdStrArr, ", "))
+	res.SetHeader("Access-Control-Allow-Origin", strings.Join(router.cors.AllowedOrigins, ", "))
+	res.SetHeader("Access-Control-Allow-Methods", strings.Join(corsMtdStrArr, ", "))
+	res.SetHeader("Access-Control-Allow-Headers", strings.Join(router.cors.AllowedHeaders, ", "))
+	res.SetHeader("Access-Control-Allow-Credentials", strconv.FormatBool(router.cors.AllowedCredentials))
+	res.SetHeader("Access-Control-Max-Age", strconv.Itoa(router.cors.AllowedMaxAge))
+}
+
+func handleSpecificOptionsMethod(res Response, router *DefaultRouter, resource map[Method]Handler) {
+	methods := make([]Method, 0)
+	for k := range resource {
+		methods = append(methods, k)
+	}
 	mtdStrArr := make([]string, len(methods))
 	for i, m := range methods {
 		mtdStrArr[i] = m.String()
