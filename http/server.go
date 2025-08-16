@@ -58,41 +58,6 @@ func New(port int) Server {
 	}
 }
 
-// ServeHTTP handles incoming HTTP requests by dispatching to the appropriate route handler.
-func (dr *DefaultRouter) ServeHTTP(req Request, res Response) {
-	resource, resOk := dr.routes[req.Path()]
-	if !resOk &&
-		!(req.Method() == MethodOptions && req.Path() == "*") &&
-		!(req.Method() == MethodConnect) {
-		res.WriteHeader(StatusNotFound)
-		res.SetHeader("Content-Type", "text/html")
-		res.Write([]byte("<h1>404 Not Found</h1>"))
-		return
-	}
-
-	if req.Method() == MethodHead {
-		handleHeadMethod(req, res, resource)
-		return
-	}
-
-	if req.Method() == MethodOptions {
-		handlerOptionsMethod(req, res, dr, resource)
-		return
-	}
-
-	handler, handlerOk := resource[req.Method()]
-	if !handlerOk {
-		catchAll, allOk := resource["*"]
-		if allOk {
-			catchAll.ServeHTTP(req, res)
-			return
-		}
-		HTTPError(res, StatusMethodNotAllowed)
-		return
-	}
-	handler.ServeHTTP(req, res)
-}
-
 // Start begins listening on the server's configured port and handles incoming TCP connections.
 func (s *Server) Start() {
 	cli.MadeInBasliqLabs()

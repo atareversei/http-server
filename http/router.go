@@ -83,6 +83,41 @@ func (dr *DefaultRouter) Delete(path string, handler Handler) {
 	dr.routes[path][MethodDelete] = handler
 }
 
+// ServeHTTP handles incoming HTTP requests by dispatching to the appropriate route handler.
+func (dr *DefaultRouter) ServeHTTP(req Request, res Response) {
+	resource, resOk := dr.routes[req.Path()]
+	if !resOk &&
+		!(req.Method() == MethodOptions && req.Path() == "*") &&
+		!(req.Method() == MethodConnect) {
+		res.WriteHeader(StatusNotFound)
+		res.SetHeader("Content-Type", "text/html")
+		res.Write([]byte("<h1>404 Not Found</h1>"))
+		return
+	}
+
+	if req.Method() == MethodHead {
+		handleHeadMethod(req, res, resource)
+		return
+	}
+
+	if req.Method() == MethodOptions {
+		handlerOptionsMethod(req, res, dr, resource)
+		return
+	}
+
+	handler, handlerOk := resource[req.Method()]
+	if !handlerOk {
+		catchAll, allOk := resource["*"]
+		if allOk {
+			catchAll.ServeHTTP(req, res)
+			return
+		}
+		HTTPError(res, StatusMethodNotAllowed)
+		return
+	}
+	handler.ServeHTTP(req, res)
+}
+
 // checkResourceEntry ensures the inner map for a path exists before assigning a method handler.
 func (dr *DefaultRouter) checkResourceEntry(path string) {
 	_, ok := dr.routes[path]
@@ -97,15 +132,17 @@ var availableMethodsPopulated = false
 func (dr *DefaultRouter) getAllAvailableMethods() []Method {
 	if !availableMethodsPopulated {
 		var methods = make(map[Method]bool)
-		for p, _ := range dr.routes {
-			for m, _ := range dr.routes[p] {
+		for p := range dr.routes {
+			for m := range dr.routes[p] {
 				methods[m] = true
 			}
 		}
 
-		for m, _ := range methods {
+		for m := range methods {
 			availableMethods = append(availableMethods, m)
 		}
+
+		availableMethodsPopulated = true
 	}
 
 	return availableMethods
