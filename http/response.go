@@ -31,17 +31,20 @@ type Response struct {
 	// conn holds the TCP connection information.
 	// required for writing a response.
 	conn net.Conn
+	// encoder
+	encoder Encoder
 }
 
 // newResponse creates a new response struct that has
 // useful receiver functions.
-func newResponse(conn net.Conn, version Version, method Method) Response {
+func newResponse(req Request) Response {
 	return Response{
 		server:  "basliq labs",
 		headers: make(map[string]string),
-		version: version,
-		method:  method,
-		conn:    conn,
+		version: req.Version(),
+		method:  req.Method(),
+		conn:    req.conn,
+		encoder: selectEncoder(req.Header("Accept-Encoding")),
 	}
 }
 
@@ -64,7 +67,7 @@ func (res *Response) Write(data []byte) {
 	res.body = data
 	res.contentLength = len(data)
 	response := res.generate()
-	res.conn.Write([]byte(response))
+	res.conn.Write(res.encoder.Encode([]byte(response)))
 }
 
 // SetHeader takes a key and value pair that will be written in the headers.
@@ -91,4 +94,20 @@ func (res *Response) generate() string {
 	}
 	builder.WriteString(fmt.Sprintf("\r\n%s", res.body))
 	return builder.String()
+}
+
+func selectEncoder(value string, enable bool) Encoder {
+	if !enable || value == "" {
+		return PLAIN
+	}
+
+	encArr := strings.Split(value, ",")
+	// TODO: implement priority list for encoders
+	for _, enc := range encArr {
+		e, err := IsEncodingValid(strings.TrimSpace(enc))
+		if err == nil {
+			return e
+		}
+	}
+	return PLAIN
 }

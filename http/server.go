@@ -78,17 +78,15 @@ func (s *Server) Start() {
 
 // handleConnection reads an HTTP request from a raw TCP connection and dispatches it.
 func (s *Server) handleConnection(conn net.Conn) {
+	defer conn.Close()
 	request := newRequestFromTCPConn(conn, s.Logger)
 	err := request.Parse()
-	response := newResponse(conn, request.Version(), request.Method())
+	response := newResponse(request)
 	if err != nil {
-		response.WriteHeader(StatusBadRequest)
-		response.SetHeader("Content-Type", "text/html")
-		response.Write([]byte("<h1>400 Bad Request</h1>"))
-		response.Write([]byte(fmt.Sprintf("<p>Digest: %s</p>", err)))
+		HTTPErrorWithMessage(response, StatusBadRequest, "400 Bad Request", fmt.Sprintf("<p>Digest: %s</p>", err))
+		return
 	}
 	s.handleRequest(request, response)
-	conn.Close()
 }
 
 // handleHttpRequest delegates request handling to the registered Router.

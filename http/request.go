@@ -36,7 +36,7 @@ type Request struct {
 	// conn holds the TCP connection information.
 	// required for reading the request data.
 	conn net.Conn
-
+	// logger
 	logger Logger
 }
 
