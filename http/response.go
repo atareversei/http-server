@@ -47,8 +47,12 @@ func newResponse(conn net.Conn, version Version, method Method) Response {
 
 // WriteHeader is used to set a status code and status message.
 func (res *Response) WriteHeader(status StatusCode) {
+	res.WriteHeaderWithMessage(status, status.String())
+}
+
+func (res *Response) WriteHeaderWithMessage(status StatusCode, message string) {
 	res.statusCode = int(status)
-	res.statusMessage = status.String()
+	res.statusMessage = message
 }
 
 // Write is used to write a response. This function receives an argument

@@ -8,6 +8,7 @@ const (
 	StatusNotFound            StatusCode = 404
 	StatusMethodNotAllowed    StatusCode = 405
 	StatusInternalServerError StatusCode = 500
+	StatusServiceUnavailable  StatusCode = 503
 )
 
 const (
@@ -16,6 +17,7 @@ const (
 	notFoundMessage            = "Not Found"
 	methodNotAllowedMessage    = "Method Not Allowed"
 	internalServerErrorMessage = "Internal Server Error"
+	serviceUnavailableMessage  = "Service Unavailable"
 )
 
 func (s StatusCode) String() string {
@@ -30,6 +32,8 @@ func (s StatusCode) String() string {
 		return methodNotAllowedMessage
 	case StatusInternalServerError:
 		return internalServerErrorMessage
+	case StatusServiceUnavailable:
+		return serviceUnavailableMessage
 	default:
 		return ""
 	}

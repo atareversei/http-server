@@ -2,6 +2,8 @@ package http
 
 import (
 	"fmt"
+	"io"
+	"net"
 	"strconv"
 	"strings"
 )
@@ -58,7 +60,7 @@ func handleHeadMethod(req Request, res Response, resource map[Method]Handler) {
 	handler.ServeHTTP(req, res)
 }
 
-func handlerOptionsMethod(req Request, res Response, router *DefaultRouter, resource map[Method]Handler) {
+func handleOptionsMethod(req Request, res Response, router *DefaultRouter, resource map[Method]Handler) {
 	if req.Path() == "*" {
 		handleGeneralOptionsMethod(res, router)
 		return
@@ -108,4 +110,24 @@ func handleSpecificOptionsMethod(res Response, router *DefaultRouter, resource m
 	res.SetHeader("Access-Control-Allow-Headers", strings.Join(router.cors.AllowedHeaders, ", "))
 	res.SetHeader("Access-Control-Allow-Credentials", strconv.FormatBool(router.cors.AllowedCredentials))
 	res.SetHeader("Access-Control-Max-Age", strconv.Itoa(router.cors.AllowedMaxAge))
+}
+
+func handleConnectMethod(req Request, res Response) {
+	path := req.Path()
+	srcConn := req.conn
+	dstConn, err := net.Dial("tcp", path)
+	if err != nil {
+		HTTPErrorWithMessage(res, StatusServiceUnavailable, "Service Unavailable", "service refused to connect")
+		return
+	}
+
+	res.WriteHeaderWithMessage(StatusOk, "Connection Established")
+
+	go func() {
+		defer dstConn.Close()
+		defer srcConn.Close()
+		io.Copy(dstConn, srcConn)
+	}()
+
+	io.Copy(srcConn, dstConn)
 }
