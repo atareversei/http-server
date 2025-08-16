@@ -3,6 +3,7 @@ package http
 import (
 	"fmt"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/atareversei/http-server/internal/cli"
@@ -42,6 +43,12 @@ type Server struct {
 
 	// shutdownTimeout would define how long to wait during graceful shutdown.
 	shutdownTimeout time.Duration
+
+	// MaxRequestPerConnection
+	MaxRequestPerConnection int
+
+	// KeepAliveFor
+	KeepAliveFor time.Duration
 }
 
 // New creates and returns a new Server with the specified port and router.
@@ -79,17 +86,40 @@ func (s *Server) Start() {
 // handleConnection reads an HTTP request from a raw TCP connection and dispatches it.
 func (s *Server) handleConnection(conn net.Conn) {
 	defer conn.Close()
-	request := newRequestFromTCPConn(conn, s.Logger)
-	err := request.Parse()
-	response := newResponse(request)
-	if err != nil {
-		HTTPErrorWithMessage(response, StatusBadRequest, "400 Bad Request", fmt.Sprintf("<p>Digest: %s</p>", err))
-		return
+
+	requestCount := 0
+
+	for {
+		conn.SetDeadline(time.Now().Add(s.KeepAliveFor))
+		request := newRequestFromTCPConn(conn, s.Logger)
+		err := request.Parse()
+		response := newResponse(conn, request)
+		if err != nil {
+			HTTPErrorWithMessage(response, StatusBadRequest, "400 Bad Request", fmt.Sprintf("<p>Digest: %s</p>", err))
+			return
+		}
+		s.handleRequest(request, response)
+
+		if !shouldKeepAlive(request) {
+			return
+		}
+
+		requestCount++
+		if requestCount >= s.MaxRequestPerConnection {
+			return
+		}
 	}
-	s.handleRequest(request, response)
 }
 
 // handleHttpRequest delegates request handling to the registered Router.
 func (s *Server) handleHttpRequest(request Request, response Response) {
 	s.Router.ServeHTTP(request, response)
+}
+
+func shouldKeepAlive(req Request) bool {
+	value, _ := req.Header("Keep-Alive")
+	if strings.ToLower(value) == "close" {
+		return false
+	}
+	return true
 }

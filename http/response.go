@@ -2,7 +2,7 @@ package http
 
 import (
 	"fmt"
-	"net"
+	"io"
 	"strings"
 	"time"
 )
@@ -30,20 +30,20 @@ type Response struct {
 	headers map[string]string
 	// conn holds the TCP connection information.
 	// required for writing a response.
-	conn net.Conn
+	conn io.ReadWriter
 	// encoder
 	encoder Encoder
 }
 
 // newResponse creates a new response struct that has
 // useful receiver functions.
-func newResponse(req Request) Response {
+func newResponse(conn io.ReadWriter, req Request) Response {
 	return Response{
 		server:  "basliq labs",
 		headers: make(map[string]string),
 		version: req.Version(),
 		method:  req.Method(),
-		conn:    req.conn,
+		conn:    conn,
 		encoder: selectEncoder(req.Header("Accept-Encoding")),
 	}
 }

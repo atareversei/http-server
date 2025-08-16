@@ -3,7 +3,7 @@ package http
 import (
 	"bufio"
 	"fmt"
-	"net"
+	"io"
 	"strconv"
 	"strings"
 
@@ -35,14 +35,14 @@ type Request struct {
 	params map[string]string
 	// conn holds the TCP connection information.
 	// required for reading the request data.
-	conn net.Conn
+	conn io.Reader
 	// logger
 	logger Logger
 }
 
 // newRequestFromTCPConn creates a new request struct that can be used
 // to invoke receiver functions to populate the struct.
-func newRequestFromTCPConn(conn net.Conn, logger Logger) Request {
+func newRequestFromTCPConn(conn io.Reader, logger Logger) Request {
 	return Request{conn: conn, logger: logger}
 }
 
