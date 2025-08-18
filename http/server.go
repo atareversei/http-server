@@ -117,9 +117,16 @@ func (s *Server) handleHttpRequest(request Request, response Response) {
 }
 
 func shouldKeepAlive(req Request) bool {
-	value, _ := req.Header("Keep-Alive")
-	if strings.ToLower(value) == "close" {
-		return false
+	connectionHeader, _ := req.Header("Connection")
+	connectionHeader = strings.ToLower(strings.TrimSpace(connectionHeader))
+
+	if req.Version() == "HTTP/1.1" {
+		return connectionHeader != "close"
 	}
-	return true
+
+	if req.Version() == "HTTP/1.0" {
+		return connectionHeader == "keep-alive"
+	}
+
+	return false
 }
