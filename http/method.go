@@ -80,7 +80,7 @@ func handleGeneralOptionsMethod(res Response, router *DefaultRouter) {
 		corsMtdStrArr[i] = m.String()
 	}
 
-	res.WriteHeader(StatusOk)
+	res.SetStatus(StatusOk)
 	res.SetHeader("Allow", strings.Join(mtdStrArr, ", "))
 	res.SetHeader("Access-Control-Allow-Origin", strings.Join(router.cors.AllowedOrigins, ", "))
 	res.SetHeader("Access-Control-Allow-Methods", strings.Join(corsMtdStrArr, ", "))
@@ -103,7 +103,7 @@ func handleSpecificOptionsMethod(res Response, router *DefaultRouter, resource m
 		corsMtdStrArr[i] = m.String()
 	}
 
-	res.WriteHeader(StatusOk)
+	res.SetStatus(StatusOk)
 	res.SetHeader("Allow", strings.Join(mtdStrArr, ", "))
 	res.SetHeader("Access-Control-Allow-Origin", strings.Join(router.cors.AllowedOrigins, ", "))
 	res.SetHeader("Access-Control-Allow-Methods", strings.Join(corsMtdStrArr, ", "))
@@ -121,7 +121,7 @@ func handleConnectMethod(req Request, res Response) {
 		return
 	}
 
-	res.WriteHeaderWithMessage(StatusOk, "Connection Established")
+	res.SetStatusWithMessage(StatusOk, "Connection Established")
 
 	go func() {
 		defer dstConn.Close()

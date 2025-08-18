@@ -94,7 +94,7 @@ func (dr *DefaultRouter) ServeHTTP(req Request, res Response) {
 	if !resOk &&
 		!(req.Method() == MethodOptions && req.Path() == "*") &&
 		!(req.Method() == MethodConnect) {
-		res.WriteHeader(StatusNotFound)
+		res.SetStatus(StatusNotFound)
 		res.SetHeader("Content-Type", "text/html")
 		res.Write([]byte("<h1>404 Not Found</h1>"))
 		return

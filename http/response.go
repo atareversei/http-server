@@ -24,20 +24,20 @@ type Response struct {
 	// contentLength is a header field that indicates
 	// the length of body in bytes if there is any
 	contentLength int
-	// body holds the body data
-	body []byte
 	// headers holds other header fields
 	headers map[string]string
+	// headersSent
+	headersSent bool
 	// conn holds the TCP connection information.
 	// required for writing a response.
-	conn io.ReadWriter
+	conn io.ReadWriteCloser
 	// encoder
 	encoder Encoder
 }
 
 // newResponse creates a new response struct that has
 // useful receiver functions.
-func newResponse(conn io.ReadWriter, req Request) Response {
+func newResponse(conn io.ReadWriteCloser, req Request) Response {
 	return Response{
 		server:  "basliq labs",
 		headers: make(map[string]string),
@@ -48,12 +48,12 @@ func newResponse(conn io.ReadWriter, req Request) Response {
 	}
 }
 
-// WriteHeader is used to set a status code and status message.
-func (res *Response) WriteHeader(status StatusCode) {
-	res.WriteHeaderWithMessage(status, status.String())
+// SetStatus is used to set a status code and status message.
+func (res *Response) SetStatus(status StatusCode) {
+	res.SetStatusWithMessage(status, status.String())
 }
 
-func (res *Response) WriteHeaderWithMessage(status StatusCode, message string) {
+func (res *Response) SetStatusWithMessage(status StatusCode, message string) {
 	res.statusCode = int(status)
 	res.statusMessage = message
 }
@@ -61,13 +61,14 @@ func (res *Response) WriteHeaderWithMessage(status StatusCode, message string) {
 // Write is used to write a response. This function receives an argument
 // that will be written in body.
 func (res *Response) Write(data []byte) {
-	if res.statusCode == 0 || res.statusMessage == "" {
-		res.WriteHeader(StatusOk)
+	if !res.headersSent {
+		if res.statusCode == 0 || res.statusMessage == "" {
+			res.SetStatus(StatusOk)
+		}
+		res.contentLength = len(data)
+		res.WriteHeader()
 	}
-	res.body = data
-	res.contentLength = len(data)
-	response := res.generate()
-	res.conn.Write(res.encoder.Encode([]byte(response)))
+	res.conn.Write(res.encoder.Encode([]byte(data)))
 }
 
 // SetHeader takes a key and value pair that will be written in the headers.
@@ -75,9 +76,8 @@ func (res *Response) SetHeader(key, value string) {
 	res.headers[key] = value
 }
 
-// generate is a function that will create the final Response in the
-// right format.
-func (res *Response) generate() string {
+func (res *Response) WriteHeader() {
+	res.headersSent = true
 	var builder strings.Builder
 	builder.WriteString(fmt.Sprintf("%s %d %s\r\n", res.version, res.statusCode, res.statusMessage))
 	builder.WriteString(fmt.Sprintf("Content-Length: %d\r\n", res.contentLength))
@@ -89,11 +89,7 @@ func (res *Response) generate() string {
 		builder.WriteString(fmt.Sprintf("%s: %s\r\n", k, v))
 	}
 	builder.WriteString(fmt.Sprintf("Date: %s\r\n", time.Now().Format(time.RFC1123)))
-	if res.method == MethodHead || res.method == MethodOptions {
-		return builder.String()
-	}
-	builder.WriteString(fmt.Sprintf("\r\n%s", res.body))
-	return builder.String()
+	res.conn.Write([]byte(builder.String()))
 }
 
 func selectEncoder(value string, enable bool) Encoder {

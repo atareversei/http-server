@@ -20,20 +20,26 @@ func (s *Server) handleFileRequest(prefix string, request Request, response Resp
 	filePath := request.Path()[i+len(prefix):]
 	fullPath := s.Static[prefix] + filePath
 	f, err := os.Open(fullPath)
+	defer f.Close()
 
 	if os.IsNotExist(err) {
-		response.WriteHeader(StatusNotFound)
+		response.SetStatus(StatusNotFound)
 		response.SetHeader("Content-Type", "text/html")
 		response.Write([]byte("<h1>404 Not Found</h1>"))
 		return
 	} else if err != nil {
-		response.WriteHeader(StatusInternalServerError)
+		response.SetStatus(StatusInternalServerError)
 		response.SetHeader("Content-Type", "text/html")
 		response.Write([]byte("<h1>500 Internal Server Error</h1>"))
 		return
 	}
 
-	defer f.Close()
+	fileInfo, err := f.Stat()
+	if err != nil {
+		HTTPError(response, StatusInternalServerError)
+		return
+	}
+	response.contentLength = int(fileInfo.Size())
 
 	ext := filepath.Ext(fullPath)
 	mimeType := mime.TypeByExtension(ext)
@@ -42,18 +48,8 @@ func (s *Server) handleFileRequest(prefix string, request Request, response Resp
 	}
 	response.SetHeader("Content-Type", mimeType)
 
-	buf := make([]byte, 1024)
-	for {
-		n, err := f.Read(buf)
-		if err != nil && err != io.EOF {
-			response.WriteHeader(StatusInternalServerError)
-			response.SetHeader("Content-Type", "text/html")
-			response.Write([]byte("<h1>500 Internal Server Error</h1>"))
-			return
-		}
-		if n == 0 {
-			break
-		}
-		response.Write(buf[:n])
+	_, err = io.Copy(response.conn, f)
+	if err != nil {
+		response.conn.Close()
 	}
 }

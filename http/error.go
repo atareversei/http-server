@@ -12,7 +12,7 @@ func HTTPError(res Response, status StatusCode) {
 }
 
 func HTTPErrorWithMessage(res Response, status StatusCode, title string, message string) {
-	res.WriteHeader(status)
+	res.SetStatus(status)
 	res.SetHeader("Content-Type", "text/html")
 
 	messageElm := ""
