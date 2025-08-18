@@ -35,14 +35,14 @@ type Request struct {
 	params map[string]string
 	// conn holds the TCP connection information.
 	// required for reading the request data.
-	conn io.Reader
+	conn io.ReadWriteCloser
 	// logger
 	logger Logger
 }
 
 // newRequestFromTCPConn creates a new request struct that can be used
 // to invoke receiver functions to populate the struct.
-func newRequestFromTCPConn(conn io.Reader, logger Logger) Request {
+func newRequestFromTCPConn(conn io.ReadWriteCloser, logger Logger) Request {
 	return Request{conn: conn, logger: logger}
 }
 

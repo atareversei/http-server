@@ -1,6 +1,9 @@
 package http
 
-import "strings"
+import (
+	"strings"
+	"sync"
+)
 
 // Router is the interface for registering and handling HTTP routes.
 type Router interface {
@@ -10,9 +13,11 @@ type Router interface {
 
 // DefaultRouter provides a basic implementation of the Router interface.
 type DefaultRouter struct {
-	routes map[string]map[Method]Handler
-	logger Logger
-	cors   CORSConfig
+	routes            map[string]map[Method]Handler
+	logger            Logger
+	cors              CORSConfig
+	methodsCache      []Method
+	methodsCacheMutex sync.Mutex
 }
 
 // NewRouter creates and returns a new DefaultRouter with initialized route map and logger.
@@ -131,24 +136,24 @@ func (dr *DefaultRouter) checkResourceEntry(path string) {
 	}
 }
 
-var availableMethods = make([]Method, 0)
-var availableMethodsPopulated = false
-
 func (dr *DefaultRouter) getAllAvailableMethods() []Method {
-	if !availableMethodsPopulated {
-		var methods = make(map[Method]bool)
-		for p := range dr.routes {
-			for m := range dr.routes[p] {
-				methods[m] = true
-			}
-		}
+	dr.methodsCacheMutex.Lock()
+	defer dr.methodsCacheMutex.Unlock()
 
-		for m := range methods {
-			availableMethods = append(availableMethods, m)
-		}
-
-		availableMethodsPopulated = true
+	if dr.methodsCache != nil {
+		return dr.methodsCache
 	}
 
-	return availableMethods
+	var methods = make(map[Method]bool)
+	for p := range dr.routes {
+		for m := range dr.routes[p] {
+			methods[m] = true
+		}
+	}
+
+	for m := range methods {
+		dr.methodsCache = append(dr.methodsCache, m)
+	}
+
+	return dr.methodsCache
 }

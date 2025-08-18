@@ -8,7 +8,7 @@ import (
 type Encoder string
 
 const (
-	PLAIN Encoder = "plaintext"
+	PLAIN Encoder = "plain"
 	QZIP  Encoder = "qzip"
 )
 
