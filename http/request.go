@@ -2,6 +2,7 @@ package http
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"strconv"
@@ -148,9 +149,21 @@ func (req *Request) parseHeaders(r *bufio.Reader) {
 
 // parseBody parses the body of an HTTP request if there is any.
 func (req *Request) parseBody(r *bufio.Reader) {
-	if req.method == "GET" {
+	if req.Method() == MethodGet ||
+		req.Method() == MethodOptions ||
+		req.Method() == MethodHead ||
+		req.Method() == MethodConnect {
 		return
 	}
+
+	if transferEncoding, ok := req.headers["Transfer-Encoding"]; ok && strings.ToLower(strings.TrimSpace(transferEncoding)) == "chunked" {
+		err := req.parseChunkedBody(r)
+		if err != nil {
+			cli.Error("couldn't find `Content-Length` in the headers", fmt.Errorf("headers map returned `!ok` for `Content-Length`"))
+			return
+		}
+	}
+
 	contentLengthValue, ok := req.headers["Content-Length"]
 	if !ok {
 		cli.Error("couldn't find `Content-Length` in the headers", fmt.Errorf("headers map returned `!ok` for `Content-Length`"))
@@ -167,6 +180,36 @@ func (req *Request) parseBody(r *bufio.Reader) {
 	body := make([]byte, contentLength)
 	_, err = r.Read(body)
 	req.body = body
+}
+
+func (req *Request) parseChunkedBody(r *bufio.Reader) error {
+	var body bytes.Buffer
+	for {
+		sizeLine, err := r.ReadString('\n')
+		if err != nil {
+			return err
+		}
+		sizeLine = strings.TrimSpace(sizeLine)
+		chunkSize, err := strconv.ParseInt(sizeLine, 16, 64)
+		if err != nil {
+			return err
+		}
+
+		if chunkSize == 0 {
+			r.ReadString('\n')
+			break
+		}
+
+		chunkData := make([]byte, chunkSize)
+		_, err = io.ReadFull(r, chunkData)
+		if err != nil {
+			return err
+		}
+		body.Write(chunkData)
+		r.ReadString('\n')
+	}
+	req.body = body.Bytes()
+	return nil
 }
 
 // Method returns the method of the request.
