@@ -14,6 +14,7 @@ const (
 )
 
 // Writer is a streaming writer that performs a simplified LZ77 compression.
+// TODO: implement with ring buffer
 type Writer struct {
 	w      io.Writer
 	window []byte
@@ -135,14 +136,16 @@ func (qr *Reader) Read(data []byte) (int, error) {
 				return bytesRead, errors.New("qzip: invalid distance in pointer")
 			}
 
-			sequence := qr.window[start : start+length]
-			n := copy(data[bytesRead:], sequence)
-			bytesRead += n
-
-			if n < len(sequence) {
-				qr.outbuf = sequence[n:]
+			for i := 0; i < length; i++ {
+				b := qr.window[start+i]
+				qr.window = append(qr.window, b)
+				if bytesRead < len(data) {
+					data[bytesRead] = b
+					bytesRead++
+				} else {
+					qr.outbuf = append(qr.outbuf, b)
+				}
 			}
-			qr.window = append(qr.window, sequence...)
 		} else {
 			return bytesRead, errors.New("qzip: invalid marker in data stream")
 		}
