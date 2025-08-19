@@ -3,6 +3,7 @@ package http
 import (
 	"fmt"
 	"github.com/atareversei/http-server/internal/qzip"
+	"io"
 )
 
 type Encoder string
@@ -27,24 +28,13 @@ func (e Encoder) String() string {
 	return string(e)
 }
 
-func (e Encoder) Encode(in []byte) []byte {
+func (e Encoder) NewEncoder(w io.Writer) io.Writer {
 	switch e {
 	case PLAIN:
-		return in
+		return w
 	case QZIP:
-		return qzip.Compress(in)
+		return qzip.NewWriter(w)
 	}
 
-	return in
-}
-
-func (e Encoder) Decode(in []byte) []byte {
-	switch e {
-	case PLAIN:
-		return in
-	case QZIP:
-		return qzip.Decompress(in)
-	}
-
-	return in
+	return w
 }

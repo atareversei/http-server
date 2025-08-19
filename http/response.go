@@ -31,20 +31,22 @@ type Response struct {
 	// conn holds the TCP connection information.
 	// required for writing a response.
 	conn io.ReadWriteCloser
-	// encoder
-	encoder Encoder
+	// outputWriter
+	outputWriter io.Writer
 }
 
 // newResponse creates a new response struct that has
 // useful receiver functions.
 func newResponse(conn io.ReadWriteCloser, req Request) Response {
+	acceptEncoding, _ := req.Header("Accept-Encoding")
+
 	return Response{
-		server:  "basliq labs",
-		headers: make(map[string]string),
-		version: req.Version(),
-		method:  req.Method(),
-		conn:    conn,
-		encoder: selectEncoder(req.Header("Accept-Encoding")),
+		server:       "basliq labs",
+		headers:      make(map[string]string),
+		version:      req.Version(),
+		method:       req.Method(),
+		conn:         conn,
+		outputWriter: selectWriter(conn, acceptEncoding),
 	}
 }
 
@@ -68,7 +70,7 @@ func (res *Response) Write(data []byte) {
 		res.contentLength = len(data)
 		res.WriteHeader()
 	}
-	res.conn.Write(res.encoder.Encode([]byte(data)))
+	res.conn.Write([]byte(data))
 }
 
 // SetHeader takes a key and value pair that will be written in the headers.
@@ -89,21 +91,21 @@ func (res *Response) WriteHeader() {
 		builder.WriteString(fmt.Sprintf("%s: %s\r\n", k, v))
 	}
 	builder.WriteString(fmt.Sprintf("Date: %s\r\n", time.Now().Format(time.RFC1123)))
-	res.conn.Write([]byte(builder.String()))
+	res.outputWriter.Write([]byte(builder.String()))
 }
 
-func selectEncoder(value string, enable bool) Encoder {
-	if !enable || value == "" {
-		return PLAIN
-	}
+func selectWriter(w io.Writer, value string) io.Writer {
+	encoder := PLAIN
 
 	encArr := strings.Split(value, ",")
 	// TODO: implement priority list for encoders
 	for _, enc := range encArr {
 		e, err := IsEncodingValid(strings.TrimSpace(enc))
-		if err == nil {
-			return e
+		if err != nil {
+			encoder = e
+			break
 		}
 	}
-	return PLAIN
+
+	return encoder.NewEncoder(w)
 }
