@@ -106,7 +106,7 @@ func (dr *DefaultRouter) ServeHTTP(req Request, res Response) {
 	}
 
 	if req.Method() == MethodOptions {
-		handleOptionsMethod(req, res, dr, resource)
+		handleOptionsMethod(req, res, dr)
 		return
 	}
 

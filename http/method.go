@@ -6,6 +6,7 @@ import (
 	"net"
 )
 
+// Method represents an HTTP request method (e.g., GET, POST).
 type Method string
 
 const (
@@ -20,6 +21,7 @@ const (
 	MethodTrace   Method = "TRACE"
 )
 
+// IsMethodValid checks if a string corresponds to a supported HTTP method.
 func IsMethodValid(m string) (Method, error) {
 	switch m {
 	case "GET":
@@ -45,10 +47,14 @@ func IsMethodValid(m string) (Method, error) {
 	}
 }
 
+// String returns the string representation of the Method.
 func (m Method) String() string {
 	return string(m)
 }
 
+// handleHeadMethod handles a HEAD request. The server should behave as if it's
+// a GET request but must not send a response body. The streaming response writer
+// handles this implicitly by sending headers first.
 func handleHeadMethod(req Request, res Response, resource map[Method]Handler) {
 	handler, handlerOk := resource[MethodGet]
 	if !handlerOk {
@@ -58,7 +64,9 @@ func handleHeadMethod(req Request, res Response, resource map[Method]Handler) {
 	handler.ServeHTTP(req, res)
 }
 
-func handleOptionsMethod(req Request, res Response, router *DefaultRouter, resource map[Method]Handler) {
+// handleOptionsMethod handles an OPTIONS request, which is used for both
+// general server capability discovery and for CORS preflight requests.
+func handleOptionsMethod(req Request, res Response, router *DefaultRouter) {
 	isCORSAllowed := router.cors.isCORSAllowed(req)
 	if !isCORSAllowed {
 		return
@@ -78,6 +86,8 @@ func handleOptionsMethod(req Request, res Response, router *DefaultRouter, resou
 	res.SetHeader("Access-Control-Max-Age", router.cors.getAllowedMaxAgeHeader())
 }
 
+// handleConnectMethod handles a CONNECT request, establishing a two-way tunnel
+// between the client and the requested destination. This is primarily used for HTTPS proxies.
 func handleConnectMethod(req Request, res Response) {
 	path := req.Path()
 	srcConn := req.conn
