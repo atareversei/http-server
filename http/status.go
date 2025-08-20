@@ -4,6 +4,7 @@ type StatusCode int
 
 const (
 	StatusOk                  StatusCode = 200
+	StatusNoContent           StatusCode = 204
 	StatusBadRequest          StatusCode = 400
 	StatusNotFound            StatusCode = 404
 	StatusMethodNotAllowed    StatusCode = 405
@@ -13,6 +14,7 @@ const (
 
 const (
 	okMessage                  = "OK"
+	noContentMessage           = "No Content"
 	badRequestMessage          = "Bad Request"
 	notFoundMessage            = "Not Found"
 	methodNotAllowedMessage    = "Method Not Allowed"
@@ -24,6 +26,8 @@ func (s StatusCode) String() string {
 	switch s {
 	case StatusOk:
 		return okMessage
+	case StatusNoContent:
+		return noContentMessage
 	case StatusBadRequest:
 		return badRequestMessage
 	case StatusNotFound:

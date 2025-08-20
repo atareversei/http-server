@@ -27,9 +27,6 @@ type Server struct {
 	// Static maps URL path prefixes to filesystem directories for file serving.
 	Static map[string]string
 
-	// TLSCertFile string
-	// TLSKeyFile	 sting
-
 	// loggingEnabled indicates if logging is active.
 	loggingEnabled bool
 

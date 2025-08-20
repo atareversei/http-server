@@ -157,3 +157,31 @@ func (dr *DefaultRouter) getAllAvailableMethods() []Method {
 
 	return dr.methodsCache
 }
+
+func (dr *DefaultRouter) getAllAvailableMethodsHeader() string {
+	methods := dr.getAllAvailableMethods()
+	mtdStrArr := make([]string, len(methods))
+	for i, m := range methods {
+		mtdStrArr[i] = m.String()
+	}
+	return strings.Join(mtdStrArr, ", ")
+}
+
+func (dr *DefaultRouter) getAvailableMethodsForResource(path string) []Method {
+	resource, _ := dr.routes[path]
+
+	methods := make([]Method, 0)
+	for k := range resource {
+		methods = append(methods, k)
+	}
+	return methods
+}
+
+func (dr *DefaultRouter) getAvailableMethodsForResourceHeader(path string) string {
+	methods := dr.getAvailableMethodsForResource(path)
+	mtdStrArr := make([]string, len(methods))
+	for i, m := range methods {
+		mtdStrArr[i] = m.String()
+	}
+	return strings.Join(mtdStrArr, ", ")
+}
