@@ -26,12 +26,14 @@ type Response struct {
 	contentLength int
 	// headers holds other header fields
 	headers map[string]string
-	// headersSent
+	// headersSent determines if headers have been written
+	// to outputWriter for a given Response.
 	headersSent bool
 	// conn holds the TCP connection information.
 	// required for writing a response.
 	conn io.ReadWriteCloser
-	// outputWriter
+	// outputWriter writes the status, headers, and body
+	// to conn.
 	outputWriter io.Writer
 }
 
@@ -50,11 +52,12 @@ func newResponse(conn io.ReadWriteCloser, req Request) Response {
 	}
 }
 
-// SetStatus is used to set a status code and status message.
+// SetStatus is helper function which wraps SetStatusWithMessage.
 func (res *Response) SetStatus(status StatusCode) {
 	res.SetStatusWithMessage(status, status.String())
 }
 
+// SetStatusWithMessage is used to set a status code and status message.
 func (res *Response) SetStatusWithMessage(status StatusCode, message string) {
 	res.statusCode = int(status)
 	res.statusMessage = message
@@ -78,22 +81,27 @@ func (res *Response) SetHeader(key, value string) {
 	res.headers[key] = value
 }
 
+// WriteHeader writes the headers using the Response's outputWriter.
 func (res *Response) WriteHeader() {
 	res.headersSent = true
 	var builder strings.Builder
 	builder.WriteString(fmt.Sprintf("%s %d %s\r\n", res.version, res.statusCode, res.statusMessage))
 	builder.WriteString(fmt.Sprintf("Content-Length: %d\r\n", res.contentLength))
 	builder.WriteString(fmt.Sprintf("Server: %s\r\n", res.server))
-	for k, v := range res.headers {
-		if k == "Content-Length" || k == "Date" {
-			continue
+	if res.headers != nil {
+		for k, v := range res.headers {
+			if k == "Content-Length" || k == "Date" {
+				continue
+			}
+			builder.WriteString(fmt.Sprintf("%s: %s\r\n", k, v))
 		}
-		builder.WriteString(fmt.Sprintf("%s: %s\r\n", k, v))
 	}
 	builder.WriteString(fmt.Sprintf("Date: %s\r\n", time.Now().Format(time.RFC1123)))
 	res.outputWriter.Write([]byte(builder.String()))
 }
 
+// selectWriter chooses a specific encoder based on what `Accept-Encoding` header
+// has asked for.
 func selectWriter(w io.Writer, value string) io.Writer {
 	encoder := PLAIN
 

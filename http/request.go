@@ -37,13 +37,13 @@ type Request struct {
 	// conn holds the TCP connection information.
 	// required for reading the request data.
 	conn io.ReadWriteCloser
-	// logger
+	// logger logs the events of Request.
 	logger Logger
 }
 
-// newRequestFromTCPConn creates a new request struct that can be used
+// newRequest creates a new request struct that can be used
 // to invoke receiver functions to populate the struct.
-func newRequestFromTCPConn(conn io.ReadWriteCloser, logger Logger) Request {
+func newRequest(conn io.ReadWriteCloser, logger Logger) Request {
 	return Request{conn: conn, logger: logger}
 }
 
@@ -182,6 +182,8 @@ func (req *Request) parseBody(r *bufio.Reader) {
 	req.body = body
 }
 
+// parseChunkedBody parses the request chunk by chunk if `Transfer-Encoding` header is
+// set to `chunk`.
 func (req *Request) parseChunkedBody(r *bufio.Reader) error {
 	var body bytes.Buffer
 	for {

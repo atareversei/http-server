@@ -88,7 +88,7 @@ func (s *Server) handleConnection(conn net.Conn) {
 
 	for {
 		conn.SetDeadline(time.Now().Add(s.KeepAliveFor))
-		request := newRequestFromTCPConn(conn, s.Logger)
+		request := newRequest(conn, s.Logger)
 		err := request.Parse()
 		response := newResponse(conn, request)
 		if err != nil {

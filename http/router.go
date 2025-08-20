@@ -40,7 +40,7 @@ func (dr *DefaultRouter) Register(method string, path string, handler Handler) {
 	}
 	switch m {
 	case MethodGet:
-		dr.Get(path, handler)
+		dr.Get(path, handler.ServeHTTP)
 	case MethodPost:
 		dr.Post(path, handler)
 	case MethodPatch:
@@ -59,7 +59,7 @@ func (dr *DefaultRouter) All(path string, handler Handler) {
 }
 
 // Get registers a handler for HTTP GET requests on the given path.
-func (dr *DefaultRouter) Get(path string, handler Handler) {
+func (dr *DefaultRouter) Get(path string, handler HandlerFunc) {
 	dr.checkResourceEntry(path)
 	dr.routes[path][MethodGet] = handler
 }
@@ -70,19 +70,19 @@ func (dr *DefaultRouter) Post(path string, handler Handler) {
 	dr.routes[path][MethodPost] = handler
 }
 
-// Post registers a handler for HTTP Patch requests on the given path.
+// Patch registers a handler for HTTP PATCH requests on the given path.
 func (dr *DefaultRouter) Patch(path string, handler Handler) {
 	dr.checkResourceEntry(path)
 	dr.routes[path][MethodPatch] = handler
 }
 
-// Post registers a handler for HTTP Put requests on the given path.
+// Put registers a handler for HTTP PUT requests on the given path.
 func (dr *DefaultRouter) Put(path string, handler Handler) {
 	dr.checkResourceEntry(path)
 	dr.routes[path][MethodPut] = handler
 }
 
-// Post registers a handler for HTTP Delete requests on the given path.
+// Delete registers a handler for HTTP DELETE requests on the given path.
 func (dr *DefaultRouter) Delete(path string, handler Handler) {
 	dr.checkResourceEntry(path)
 	dr.routes[path][MethodDelete] = handler
@@ -136,6 +136,7 @@ func (dr *DefaultRouter) checkResourceEntry(path string) {
 	}
 }
 
+// getAllAvailableMethods returns a set of all registered methods on the router.
 func (dr *DefaultRouter) getAllAvailableMethods() []Method {
 	dr.methodsCacheMutex.Lock()
 	defer dr.methodsCacheMutex.Unlock()
@@ -158,6 +159,8 @@ func (dr *DefaultRouter) getAllAvailableMethods() []Method {
 	return dr.methodsCache
 }
 
+// getAllAvailableMethodsHeader is a helper function that returns a string
+// based on getAllAvailableMethods.
 func (dr *DefaultRouter) getAllAvailableMethodsHeader() string {
 	methods := dr.getAllAvailableMethods()
 	mtdStrArr := make([]string, len(methods))
@@ -167,6 +170,7 @@ func (dr *DefaultRouter) getAllAvailableMethodsHeader() string {
 	return strings.Join(mtdStrArr, ", ")
 }
 
+// getAvailableMethodsForResource returns a set of all registered methods on the router.
 func (dr *DefaultRouter) getAvailableMethodsForResource(path string) []Method {
 	resource, _ := dr.routes[path]
 
@@ -177,6 +181,8 @@ func (dr *DefaultRouter) getAvailableMethodsForResource(path string) []Method {
 	return methods
 }
 
+// getAvailableMethodsForResourceHeader is a helper function that returns a string
+// based on getAvailableMethodsForResource.
 func (dr *DefaultRouter) getAvailableMethodsForResourceHeader(path string) string {
 	methods := dr.getAvailableMethodsForResource(path)
 	mtdStrArr := make([]string, len(methods))
