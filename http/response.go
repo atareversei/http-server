@@ -73,7 +73,7 @@ func (res *Response) Write(data []byte) {
 		res.contentLength = len(data)
 		res.WriteHeader()
 	}
-	res.conn.Write([]byte(data))
+	res.outputWriter.Write([]byte(data))
 }
 
 // SetHeader takes a key and value pair that will be written in the headers.
@@ -97,6 +97,7 @@ func (res *Response) WriteHeader() {
 		}
 	}
 	builder.WriteString(fmt.Sprintf("Date: %s\r\n", time.Now().Format(time.RFC1123)))
+	builder.WriteString("\r\n")
 	res.outputWriter.Write([]byte(builder.String()))
 }
 

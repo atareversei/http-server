@@ -51,7 +51,8 @@ type Server struct {
 // New creates and returns a new Server with the specified port and router.
 func New() Server {
 	return Server{
-		Logger: &DefaultLogger{},
+		KeepAliveFor: 30 * time.Second,
+		Logger:       &DefaultLogger{},
 		CorsConfig: CORSConfig{
 			AllowedOrigins: []string{"*"},
 			AllowedMethods: []Method{MethodGet, MethodHead, MethodOptions},

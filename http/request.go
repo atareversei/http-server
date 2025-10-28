@@ -127,6 +127,7 @@ func (req *Request) parseHeaders(r *bufio.Reader) {
 	if req.headers == nil {
 		req.headers = make(map[string]string)
 	}
+
 	for {
 		header, err := r.ReadString('\n')
 		header = strings.TrimSpace(header)
@@ -145,6 +146,11 @@ func (req *Request) parseHeaders(r *bufio.Reader) {
 		}
 		req.headers[headerParts[0]] = headerParts[1]
 	}
+
+	_, ok := req.headers["Content-Length"]
+	if !ok {
+		req.headers["Content-Length"] = "0"
+	}
 }
 
 // parseBody parses the body of an HTTP request if there is any.
@@ -159,7 +165,7 @@ func (req *Request) parseBody(r *bufio.Reader) {
 	if transferEncoding, ok := req.headers["Transfer-Encoding"]; ok && strings.ToLower(strings.TrimSpace(transferEncoding)) == "chunked" {
 		err := req.parseChunkedBody(r)
 		if err != nil {
-			cli.Error("couldn't find `Content-Length` in the headers", fmt.Errorf("headers map returned `!ok` for `Content-Length`"))
+			cli.Error("couldn't find `Transfer-Encoding` in the headers", fmt.Errorf("headers map returned `!ok` for `Content-Length`"))
 			return
 		}
 	}
