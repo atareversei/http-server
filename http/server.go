@@ -49,9 +49,8 @@ type Server struct {
 }
 
 // New creates and returns a new Server with the specified port and router.
-func New(port int) Server {
+func New() Server {
 	return Server{
-		Port:   port,
 		Logger: &DefaultLogger{},
 		CorsConfig: CORSConfig{
 			AllowedOrigins: []string{"*"},
@@ -63,8 +62,9 @@ func New(port int) Server {
 }
 
 // Start begins listening on the server's configured port and handles incoming TCP connections.
-func (s *Server) Start() {
+func (s *Server) Start(port int) {
 	cli.MadeInBasliqLabs()
+	s.Port = port
 	s.Logger.Success(fmt.Sprintf("tcp server is starting at :%d", s.Port))
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", s.Port))
 	if err != nil {
