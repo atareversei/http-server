@@ -46,6 +46,8 @@ type Server struct {
 
 	// KeepAliveFor
 	KeepAliveFor time.Duration
+
+	UpgradeHandler func(conn *net.Conn, req Request)
 }
 
 // New creates and returns a new Server with the specified port and router.
@@ -83,7 +85,11 @@ func (s *Server) Start(port int) {
 
 // handleConnection reads an HTTP request from a raw TCP connection and dispatches it.
 func (s *Server) handleConnection(conn net.Conn) {
-	defer conn.Close()
+	defer func() {
+		if r := recover(); r != nil {
+			conn.Close()
+		}
+	}()
 
 	requestCount := 0
 
@@ -96,17 +102,41 @@ func (s *Server) handleConnection(conn net.Conn) {
 			HTTPErrorWithMessage(response, StatusBadRequest, "400 Bad Request", fmt.Sprintf("<p>Digest: %s</p>", err))
 			return
 		}
+
+		if request.requiresUpgrading {
+			conn.SetDeadline(time.Time{})
+			// TODO: response 101 changing protocols
+			s.UpgradeHandler(&conn, request)
+			break
+		}
+
 		s.handleRequest(request, response)
 
 		if !shouldKeepAlive(request) {
+			conn.Close()
 			return
 		}
 
 		requestCount++
 		if requestCount >= s.MaxRequestPerConnection {
+			conn.Close()
 			return
 		}
 	}
+}
+
+// handleRequest routes a request to either file serving or HTTP handling logic.
+func (s *Server) handleRequest(request Request, response Response) {
+	s.Logger.Info(fmt.Sprintf("%s %s", request.Method(), request.Path()))
+
+	for prefix, _ := range s.Static {
+		if strings.Contains(request.Path(), prefix) {
+			s.handleFileRequest(prefix, request, response)
+			return
+		}
+	}
+
+	s.handleHttpRequest(request, response)
 }
 
 // handleHttpRequest delegates request handling to the registered Router.

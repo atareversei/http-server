@@ -39,12 +39,15 @@ type Request struct {
 	conn io.ReadWriteCloser
 	// logger logs the events of Request.
 	logger Logger
+	// requiresUpgrading indicates that a request needs to be upgraded
+	// to use another protocol
+	requiresUpgrading bool
 }
 
 // newRequest creates a new request struct that can be used
 // to invoke receiver functions to populate the struct.
 func newRequest(conn io.ReadWriteCloser, logger Logger) Request {
-	return Request{conn: conn, logger: logger}
+	return Request{conn: conn, logger: logger, requiresUpgrading: false}
 }
 
 // Parse is used to parse a TCP byte stream into
@@ -54,6 +57,7 @@ func (req *Request) Parse() error {
 	req.parseStartLine(r)
 	req.parseHeaders(r)
 	req.parseBody(r)
+	req.checkForUpgrade()
 	return nil
 }
 
@@ -220,6 +224,10 @@ func (req *Request) parseChunkedBody(r *bufio.Reader) error {
 	return nil
 }
 
+func (req *Request) checkForUpgrade() {
+	// TODO: check for upgrade
+}
+
 // Method returns the method of the request.
 func (req *Request) Method() Method {
 	return req.method
@@ -245,18 +253,4 @@ func (req *Request) Header(key string) (string, bool) {
 func (req *Request) Params(key string) (string, bool) {
 	v, ok := req.params[key]
 	return v, ok
-}
-
-// handleRequest routes a request to either file serving or HTTP handling logic.
-func (s *Server) handleRequest(request Request, response Response) {
-	s.Logger.Info(fmt.Sprintf("%s %s", request.Method(), request.Path()))
-
-	for prefix, _ := range s.Static {
-		if strings.Contains(request.Path(), prefix) {
-			s.handleFileRequest(prefix, request, response)
-			return
-		}
-	}
-
-	s.handleHttpRequest(request, response)
 }
