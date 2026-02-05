@@ -4,7 +4,7 @@ import (
 	"flag"
 	"net"
 
-	"github.com/atareversei/http-server/examples/ws-ping/handler"
+	"github.com/atareversei/http-server/examples/ws-echo/handler"
 	"github.com/atareversei/http-server/http"
 	"github.com/atareversei/http-server/ws"
 )
@@ -18,7 +18,7 @@ func main() {
 	flag.Parse()
 	port := *portFlag
 
-	ws := ws.Server{}
+	websocketServer := ws.Server{}
 
 	hndlr := handler.New()
 	app := App{handler: hndlr}
@@ -27,7 +27,15 @@ func main() {
 	router.Get("/ping", app.handler.Ping)
 
 	s.UpgradeHandler = func(conn *net.Conn, req http.Request) {
-		ws.Start(conn)
+		websocketServer.Start(
+			conn,
+			ws.HTTPRequest{
+				Path:    req.Path(),
+				Method:  req.Method().String(),
+				Headers: req.Headers(),
+				Params:  req.Params(),
+			},
+		)
 	}
 
 	s.Start(port)

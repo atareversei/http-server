@@ -10,7 +10,7 @@ import (
 
 func (h Handler) Contact(req http.Request, res http.Response) {
 	contacts := make([]entity.Contact, 0)
-	code, _ := req.Params("code")
+	code, _ := req.Param("code")
 	if code != "" {
 		contact, err := h.repo.FindByCode(code)
 		if err == nil {
@@ -18,22 +18,22 @@ func (h Handler) Contact(req http.Request, res http.Response) {
 		}
 	}
 	if code == "" {
-		name, _ := req.Params("name")
+		name, _ := req.Param("name")
 		if name != "" {
 			ctcs := h.repo.ListByName(name)
 			contacts = append(contacts, ctcs...)
 		}
-		phone, _ := req.Params("phone")
+		phone, _ := req.Param("phone")
 		if phone != "" {
 			ctcs := h.repo.ListByPhone(phone)
 			contacts = append(contacts, ctcs...)
 		}
-		address, _ := req.Params("address")
+		address, _ := req.Param("address")
 		if address != "" {
 			ctcs := h.repo.ListByAddress(address)
 			contacts = append(contacts, ctcs...)
 		}
-		email, _ := req.Params("email")
+		email, _ := req.Param("email")
 		if email != "" {
 			ctcs := h.repo.ListByEmail(email)
 			contacts = append(contacts, ctcs...)

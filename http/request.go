@@ -57,7 +57,7 @@ func (req *Request) Parse() error {
 	req.parseStartLine(r)
 	req.parseHeaders(r)
 	req.parseBody(r)
-	req.checkForUpgrade()
+	req.checkUpgrade()
 	return nil
 }
 
@@ -148,7 +148,7 @@ func (req *Request) parseHeaders(r *bufio.Reader) {
 			cli.Error(fmt.Sprintf("malformed header: %s", header), fmt.Errorf("not abiding by key:value format"))
 			continue
 		}
-		req.headers[headerParts[0]] = headerParts[1]
+		req.headers[strings.ToLower(strings.TrimSpace(headerParts[0]))] = strings.TrimSpace(headerParts[1])
 	}
 
 	_, ok := req.headers["Content-Length"]
@@ -224,8 +224,16 @@ func (req *Request) parseChunkedBody(r *bufio.Reader) error {
 	return nil
 }
 
-func (req *Request) checkForUpgrade() {
-	// TODO: check for upgrade
+func (req *Request) checkUpgrade() {
+	upgrade, ok := req.Header(HeaderKeyUpgrade)
+
+	if !ok {
+		return
+	}
+
+	if upgrade == HeaderValueWSUpgrade {
+		req.requiresUpgrading = true
+	}
 }
 
 // Method returns the method of the request.
@@ -249,8 +257,16 @@ func (req *Request) Header(key string) (string, bool) {
 	return h, ok
 }
 
-// Params returns the query parameters of a request.
-func (req *Request) Params(key string) (string, bool) {
+func (req *Request) Headers() map[string]string {
+	return req.headers
+}
+
+// Param returns the query parameters of a request.
+func (req *Request) Param(key string) (string, bool) {
 	v, ok := req.params[key]
 	return v, ok
+}
+
+func (req *Request) Params() map[string]string {
+	return req.params
 }

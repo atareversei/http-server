@@ -105,7 +105,6 @@ func (s *Server) handleConnection(conn net.Conn) {
 
 		if request.requiresUpgrading {
 			conn.SetDeadline(time.Time{})
-			// TODO: response 101 changing protocols
 			s.UpgradeHandler(&conn, request)
 			break
 		}
