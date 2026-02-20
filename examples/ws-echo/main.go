@@ -18,7 +18,7 @@ func main() {
 	flag.Parse()
 	port := *portFlag
 
-	websocketServer := ws.Server{}
+	websocketServer := ws.New()
 
 	hndlr := handler.New()
 	app := App{handler: hndlr}
