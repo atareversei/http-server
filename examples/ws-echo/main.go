@@ -26,7 +26,7 @@ func main() {
 	router := s.NewRouter()
 	router.Get("/ping", app.handler.Ping)
 
-	s.UpgradeHandler = func(conn *net.Conn, req http.Request) {
+	s.UpgradeHandler = func(conn net.Conn, req http.Request) {
 		websocketServer.Start(
 			conn,
 			ws.HTTPRequest{

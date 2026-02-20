@@ -47,7 +47,7 @@ type Server struct {
 	// KeepAliveFor
 	KeepAliveFor time.Duration
 
-	UpgradeHandler func(conn *net.Conn, req Request)
+	UpgradeHandler func(conn net.Conn, req Request)
 }
 
 // New creates and returns a new Server with the specified port and router.
@@ -105,7 +105,7 @@ func (s *Server) handleConnection(conn net.Conn) {
 
 		if request.requiresUpgrading {
 			conn.SetDeadline(time.Time{})
-			s.UpgradeHandler(&conn, request)
+			s.UpgradeHandler(conn, request)
 			break
 		}
 
