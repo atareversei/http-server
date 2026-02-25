@@ -5,23 +5,21 @@ import (
 	"net"
 )
 
-func (s *Server) manageWSConnection(conn net.Conn) {
-	buffer := make([]byte, 4096)
+func (c *Connection) manageWSConnection(conn net.Conn) {
 	for {
-		n, err := conn.Read(buffer)
+		n, err := conn.Read(c.parser.buffer)
+
+		if n > 0 {
+			c.parser.parse(c.parser.buffer[:n])
+		}
+
 		if err != nil {
 			if err == io.EOF {
-				s.Logger.Info("connection closed by peer")
+				c.Logger.Info("connection closed by peer")
 				return
 			}
 
-			s.Logger.Error("read error", err)
-		}
-
-		if n > 0 {
-			processData(buffer[:n])
+			c.Logger.Error("read error", err)
 		}
 	}
 }
-
-func processData(data []byte) {}

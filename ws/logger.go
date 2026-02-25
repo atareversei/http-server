@@ -36,14 +36,14 @@ func (n *NoOpLogger) Warning(msg string)          {}
 func (n *NoOpLogger) Error(msg string, err error) {}
 
 // DisableLogging disables all logging by replacing the logger with a no-op logger.
-func (s *Server) DisableLogging() {
-	s.previousLogger = s.Logger
-	s.Logger = &NoOpLogger{}
-	s.loggingEnabled = false
+func (c *Connection) DisableLogging() {
+	c.previousLogger = c.Logger
+	c.Logger = &NoOpLogger{}
+	c.loggingEnabled = false
 }
 
 // EnableLogging restores the previously used logger and re-enables logging.
-func (s *Server) EnableLogging() {
-	s.Logger = s.previousLogger
-	s.loggingEnabled = true
+func (c *Connection) EnableLogging() {
+	c.Logger = c.previousLogger
+	c.loggingEnabled = true
 }

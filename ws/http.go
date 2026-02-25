@@ -12,13 +12,15 @@ type HTTPRequest struct {
 	Params  map[string]string
 }
 
-// Header returns the headers of the request.
-func (req *HTTPRequest) Header(key string) (string, bool) {
+// header returns the headers of the request.
+func (req *HTTPRequest) header(key string) (string, bool) {
 	h, ok := req.Headers[key]
 	return h, ok
 }
 
-func HTTPResponse101(conn net.Conn, acceptValue string) {
+type httpToolkit struct{}
+
+func (ht *httpToolkit) response101(conn net.Conn, acceptValue string) {
 	response := fmt.Sprintf(
 		"HTTP/1.1 101 Switching Protocols\r\n"+
 			"Upgrade: websocket\r\n"+
@@ -32,7 +34,7 @@ func HTTPResponse101(conn net.Conn, acceptValue string) {
 	conn.Write([]byte(response))
 }
 
-func HTTPResponse400(conn net.Conn) {
+func (ht *httpToolkit) response400(conn net.Conn) {
 	response := fmt.Sprintf(
 		"HTTP/1.1 400 Bad Request\r\n" +
 			"Content-Length: 0" +
