@@ -21,6 +21,9 @@ type Connection struct {
 
 	// http provides useful utility functions for HTTP protocol requests and responses.
 	http httpToolkit
+
+	// handlers hold callback functions to pass the data back to user.
+	handlers handler
 }
 
 func New() *Connection {

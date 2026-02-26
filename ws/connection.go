@@ -7,10 +7,16 @@ import (
 
 func (c *Connection) manageWSConnection(conn net.Conn) {
 	for {
-		n, err := conn.Read(c.parser.buffer)
+		n, err := conn.Read(c.parser.buffer.GetWriteBuffer())
+		c.parser.buffer.CommitWrite(n)
 
-		if n > 0 {
-			c.parser.parse(c.parser.buffer[:n])
+		for n > 0 && !c.parser.buffer.IsEmpty() {
+			msg, pErr := c.parser.parse()
+
+			c.handlers.onMessage(msg)
+			if pErr != nil {
+				c.Logger.Error("parse error", err)
+			}
 		}
 
 		if err != nil {

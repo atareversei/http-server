@@ -24,8 +24,16 @@ func New(size int) *Buffer {
 	}
 }
 
+func (b *Buffer) IsEmpty() bool {
+	return b.len == 0
+}
+
+func (b *Buffer) IsFull() bool {
+	return b.cap == b.len
+}
+
 func (b *Buffer) Read(data []byte) (int, error) {
-	if b.len == 0 {
+	if b.IsEmpty() {
 		return 0, ErrEmptyBuffer
 	}
 
@@ -59,7 +67,7 @@ func (b *Buffer) ReadN(n int) ([]byte, error) {
 }
 
 func (b *Buffer) ReadByte() (byte, error) {
-	if b.len == 0 {
+	if b.IsEmpty() {
 		return 0, ErrEmptyBuffer
 	}
 
@@ -71,14 +79,16 @@ func (b *Buffer) ReadByte() (byte, error) {
 }
 
 func (b *Buffer) GetReadBuffer() []byte {
-	if b.len == 0 {
+	if b.IsEmpty() {
 		return nil
 	}
 
 	if b.readPos < b.writePos {
 		return b.buffer[b.readPos:b.writePos]
 	} else {
-		return b.buffer[b.readPos:]
+		// TODO: check `b.buffer[b.readPos:b.len]`
+		// It should not return the uninitialized cells of slice.
+		return b.buffer[b.readPos:b.len]
 	}
 }
 
@@ -118,7 +128,7 @@ func (b *Buffer) Write(data []byte) (int, error) {
 }
 
 func (b *Buffer) WriteByte(data byte) error {
-	if b.len == b.cap {
+	if b.IsFull() {
 		return ErrFullBuffer
 	}
 
@@ -130,7 +140,7 @@ func (b *Buffer) WriteByte(data byte) error {
 }
 
 func (b *Buffer) GetWriteBuffer() []byte {
-	if b.len == b.cap {
+	if b.IsFull() {
 		return nil
 	}
 
