@@ -1,22 +1,22 @@
 package ws
 
+import (
+	"encoding/binary"
+	"errors"
+)
+
 // TODO: enable streaming for continuation frames with large payloads
 type Frame struct {
-	isFin  bool
-	rsv1   byte
-	rsv2   byte
-	rsv3   byte
-	opCode opCode
-
-	hasMask         bool
-	payloadType     payloadType
-	payloadByteLeft int
-
-	headerBytesLeft int
-	lengthByteLeft  int
-	maskByteLeft    int
-
-	content []byte
+	isFin          bool
+	rsv1           byte
+	rsv2           byte
+	rsv3           byte
+	opCode         opCode
+	payloadLenType payloadLenType
+	hasMask        bool
+	mask           []byte
+	len            uint64
+	content        []byte
 }
 
 type opCode byte
@@ -88,27 +88,39 @@ func byteToOpCode(opCode byte) opCode {
 	}
 }
 
-type payloadType byte
+type payloadLenType byte
 
 const (
-	shortPayload payloadType = iota
-	mediumPayload
-	extendedPayload
-	invalidPayload
+	shortPayloadLen payloadLenType = iota
+	mediumPayloadLen
+	extendedPayloadLen
+	invalidPayloadLen
 )
 
-func byteToPayloadType(payload byte) payloadType {
-	if payload >= 0 && payload < 126 {
-		return shortPayload
+func byteToPayloadLenType(payload byte) payloadLenType {
+	if payload < 126 {
+		return shortPayloadLen
 	}
 
 	if payload == 126 {
-		return mediumPayload
+		return mediumPayloadLen
 	}
 
 	if payload == 127 {
-		return extendedPayload
+		return extendedPayloadLen
 	}
 
-	return invalidPayload
+	return invalidPayloadLen
+}
+
+func bytesToLen(bytes []byte) (uint64, error) {
+	if len(bytes) > 6 {
+		return 0, errors.New("bytes slice is invalid")
+	}
+	padded := make([]byte, 8)
+	copy(padded[8-len(bytes):], bytes)
+
+	payload := binary.BigEndian.Uint64(padded)
+
+	return payload, nil
 }

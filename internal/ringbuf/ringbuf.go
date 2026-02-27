@@ -6,6 +6,7 @@ var ErrShortRead = errors.New("short read")
 var ErrEmptyBuffer = errors.New("empty buffer")
 var ErrFullBuffer = errors.New("full buffer")
 
+// TODO: refactor int to uint
 type Buffer struct {
 	readPos  int
 	writePos int
@@ -77,6 +78,8 @@ func (b *Buffer) ReadByte() (byte, error) {
 
 	return val, nil
 }
+
+// TODO: add a function to read as many bytes possible up to provided n
 
 func (b *Buffer) GetReadBuffer() []byte {
 	if b.IsEmpty() {

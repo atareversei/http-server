@@ -65,23 +65,47 @@ func (p *parser) parseInfo() {
 	p.currentFrame.opCode = byteToOpCode(opcd)
 
 	p.currentFrame.hasMask = mask == 1
-	if p.currentFrame.hasMask {
-		p.currentFrame.maskByteLeft = 4
-	}
-
-	p.currentFrame.payloadType = byteToPayloadType(leng)
-	if p.currentFrame.payloadType == shortPayload {
-		p.currentFrame.payloadByteLeft = int(leng)
-	}
+	p.currentFrame.payloadLenType = byteToPayloadLenType(leng)
+	length, _ := bytesToLen([]byte{leng})
+	p.currentFrame.len = length
 
 	p.status = infoParsed
 }
 
 func (p *parser) parseLength() {
+	if p.currentFrame.payloadLenType == shortPayloadLen {
+		p.status = lengthParsed
+		return
+	}
+
+	n := 0
+	if p.currentFrame.payloadLenType == mediumPayloadLen {
+		n = 2
+	}
+	if p.currentFrame.payloadLenType == extendedPayloadLen {
+		n = 6
+	}
+	payloadLen, err := p.buffer.ReadN(n)
+	if err != nil {
+	}
+	length, err := bytesToLen(payloadLen)
+	if err != nil {
+	}
+	p.currentFrame.len = length
+
 	p.status = lengthParsed
 }
 
 func (p *parser) parseMask() {
+	if !p.currentFrame.hasMask {
+		p.status = maskParsed
+		return
+	}
+
+	mask, err := p.buffer.ReadN(4)
+	if err != nil {
+	}
+	p.currentFrame.mask = mask
 	p.status = maskParsed
 }
 
