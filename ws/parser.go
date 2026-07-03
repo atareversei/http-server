@@ -3,21 +3,36 @@ package ws
 import "github.com/atareversei/http-server/internal/ringbuf"
 
 const bufferSize = 65536
+const defaultMaxReadSize = 1024 * 1024
 
 type parser struct {
-	buffer       ringbuf.Buffer
-	status       parseStatus
-	currentFrame Frame
+	buffer           ringbuf.Buffer
+	status           parseStatus
+	currentFrame     frame
+	payloadBytesRead uint64
+	maxReadSize      uint64
 }
 
-func newParser() *parser {
+type parserCfg struct {
+	maxReadSize uint64
+}
+
+func newParser(cfg parserCfg) *parser {
+	maxReadSize := cfg.maxReadSize
+	if maxReadSize == 0 {
+		maxReadSize = defaultMaxReadSize
+	}
+
 	return &parser{
-		buffer: *ringbuf.New(bufferSize),
-		status: parseInitialized,
+		buffer:           *ringbuf.New(bufferSize),
+		status:           parseInitialized,
+		currentFrame:     newFrame(),
+		payloadBytesRead: 0,
+		maxReadSize:      maxReadSize,
 	}
 }
 
-func (p *parser) parse() (Frame, error) {
+func (p *parser) parse() (*frame, error) {
 	if p.status == parseInitialized {
 		p.parseInfo()
 	}
@@ -32,9 +47,9 @@ func (p *parser) parse() (Frame, error) {
 	}
 	if p.status == payloadParsed {
 		p.cleanUp()
+		return &p.currentFrame, nil
 	}
-
-	return p.currentFrame, nil
+	return nil, nil
 }
 
 func (p *parser) parseInfo() {
@@ -83,7 +98,7 @@ func (p *parser) parseLength() {
 		n = 2
 	}
 	if p.currentFrame.payloadLenType == extendedPayloadLen {
-		n = 6
+		n = 8
 	}
 	payloadLen, err := p.buffer.ReadN(n)
 	if err != nil {
@@ -110,10 +125,24 @@ func (p *parser) parseMask() {
 }
 
 func (p *parser) parsePayload() {
+	toRead := p.currentFrame.len - p.payloadBytesRead
+	availableToRead := uint64(p.buffer.Len())
+	buf := p.buffer.GetReadBuffer()
+
+	if buf == nil {
+		return
+	}
+
+	if toRead > availableToRead {
+
+	}
+
 	p.status = payloadParsed
 }
 
 func (p *parser) cleanUp() {
+	p.payloadBytesRead = 0
+	p.currentFrame = newFrame()
 	p.status = parseInitialized
 }
 

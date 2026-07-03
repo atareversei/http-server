@@ -1,7 +1,7 @@
 package ws
 
 type handler interface {
-	onMessage(message Frame)
+	onMessage(message frame)
 	onError()
 	onPing()
 }

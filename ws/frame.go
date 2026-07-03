@@ -6,7 +6,7 @@ import (
 )
 
 // TODO: enable streaming for continuation frames with large payloads
-type Frame struct {
+type frame struct {
 	isFin          bool
 	rsv1           byte
 	rsv2           byte
@@ -17,6 +17,10 @@ type Frame struct {
 	mask           []byte
 	len            uint64
 	content        []byte
+}
+
+func newFrame() frame {
+	return frame{}
 }
 
 type opCode byte
@@ -114,7 +118,7 @@ func byteToPayloadLenType(payload byte) payloadLenType {
 }
 
 func bytesToLen(bytes []byte) (uint64, error) {
-	if len(bytes) > 6 {
+	if len(bytes) > 8 {
 		return 0, errors.New("bytes slice is invalid")
 	}
 	padded := make([]byte, 8)

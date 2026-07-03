@@ -25,6 +25,14 @@ func New(size int) *Buffer {
 	}
 }
 
+func (b *Buffer) Len() int {
+	return b.len
+}
+
+func (b *Buffer) Cap() int {
+	return b.cap
+}
+
 func (b *Buffer) IsEmpty() bool {
 	return b.len == 0
 }
